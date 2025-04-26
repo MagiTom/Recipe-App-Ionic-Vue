@@ -2,22 +2,33 @@
   <ion-page>
     <ion-header>
       <ion-toolbar color="primary">
-        <ion-title>Login</ion-title>
+        <ion-title>Logowanie</ion-title>
       </ion-toolbar>
     </ion-header>
+
     <ion-content class="ion-padding">
       <div class="login-container">
-        <ion-card>
+        <ion-card class="login-card">
           <ion-card-header>
-            <ion-card-title>Welcome Back!</ion-card-title>
+            <ion-card-title class="ion-text-center">Witaj ponownie!</ion-card-title>
           </ion-card-header>
-          <ion-card-content fullscreen class="login-content">
+          <ion-card-content class="login-content">
             <ion-item>
-              <ion-label position="floating">Username</ion-label>
-              <ion-input v-model="username" clear-input></ion-input>
+              <ion-label position="floating">E-mail</ion-label>
+              <ion-input v-model="email" type="email" clear-input></ion-input>
             </ion-item>
-            <ion-button expand="block" class="ion-margin-top" @click="login">
-              Login
+
+            <ion-item>
+              <ion-label position="floating">Hasło</ion-label>
+              <ion-input v-model="password" type="password" clear-input></ion-input>
+            </ion-item>
+
+            <ion-button expand="block" class="ion-margin-top" :disabled="loading" @click="login">
+              {{ loading ? 'Logowanie...' : 'Zaloguj się' }}
+            </ion-button>
+
+            <ion-button expand="block" fill="outline" router-link="/register" class="ion-margin-top">
+              Nie masz konta? Zarejestruj się
             </ion-button>
           </ion-card-content>
         </ion-card>
@@ -27,17 +38,24 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref } from 'vue';
+import { useAuthStore } from '@/stores/authStore'; // zmień ścieżkę, jeśli masz inaczej
 import {
   IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
   IonContent,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
+  IonItem,
+  IonLabel,
   IonInput,
   IonButton,
-} from '@ionic/vue'
-import { useMainStore } from '../store'
+  useIonRouter,
+} from '@ionic/vue';
 
 export default defineComponent({
   name: 'Login',
@@ -47,43 +65,65 @@ export default defineComponent({
     IonToolbar,
     IonTitle,
     IonContent,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent,
+    IonItem,
+    IonLabel,
     IonInput,
     IonButton,
   },
   setup() {
-    const store = useMainStore()
-    const username = ref('')
+    const authStore = useAuthStore();
+    const router = useIonRouter();
+    const email = ref('');
+    const password = ref('');
+    const loading = ref(false);
 
-    const login = () => {
-      if (username.value) {
-        store.setUser({ id: '1', name: username.value })
-        alert(`Welcome, ${username.value}!`)
-      } else {
-        alert('Please enter a username')
+    const login = async () => {
+      if (!email.value || !password.value) {
+        alert('Podaj email i hasło!');
+        return;
       }
-    }
 
-    return { username, login }
+      loading.value = true;
+      try {
+        await authStore.login(email.value, password.value);
+        alert(`Zalogowano jako ${email.value}!`);
+        router.push('/home')
+      } catch (err: any) {
+        alert('Błąd logowania: ' + (err.response?.data?.detail || err.message));
+      } finally {
+        loading.value = false;
+      }
+    };
+
+    return { email, password, loading, login };
   },
-})
+});
 </script>
 
 <style scoped>
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 56px); /* Odejmujemy wysokość toolbar */
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+}
+
 .login-content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   padding: 16px;
 }
 
-.login-container {
-  margin: auto;
-  width: 100%;
-  max-width: 400px;
-}
-
-ion-card {
-  width: 100%;
-  max-width: 400px;
+ion-item {
+  margin-bottom: 16px;
 }
 </style>

@@ -34,19 +34,38 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router'; // 🛠️ poprawione tutaj
-import { IonLoading } from '@ionic/vue'; // tylko komponent Ionic
+import { IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCol, IonContent, IonGrid, IonHeader, IonLoading, IonPage, IonRow, IonTitle, IonToolbar, useIonRouter } from '@ionic/vue'; // tylko komponent Ionic
+import { computed, defineComponent, ref, watch } from 'vue';
 import { useRecipeStore } from '../stores/recipeStore'; // Twoje Pinia store
 
 
 export default defineComponent({
   name: 'RecipeList',
-  components: { IonLoading },
-  setup() {
+  components: {
+  IonLoading,
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonGrid,
+  IonRow,
+  IonCol,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardSubtitle,
+  IonButton,
+   },
+   props: {
+    id: {
+      type: [String, Number],
+      required: true,
+    },
+  },
+   setup(props) {
   const recipeStore = useRecipeStore();
-  const route = useRoute();
-  const router = useRouter();
+  const router = useIonRouter();
   const loading = ref(false);
 
   const recipes = computed(() => recipeStore.recipes);
@@ -61,19 +80,14 @@ export default defineComponent({
     router.push(`/recipe/${recipeId}`);
   };
 
-  onMounted(() => {
-    if (route?.params?.id) {
-      fetchRecipes(Number(route.params.id));
-    }
-  });
-
   watch(
-    () => route?.params?.id,
+    () => props,
     (newId) => {
       if (newId) {
-        fetchRecipes(Number(newId));
+        fetchRecipes(Number(newId.id));
       }
-    }
+    },
+    { immediate: true }
   );
 
   return {
@@ -82,6 +96,7 @@ export default defineComponent({
     goToRecipe,
   };
 }
+
 });
 </script>
 

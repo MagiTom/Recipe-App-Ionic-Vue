@@ -28,10 +28,12 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/category/:id',
     component: RecipeList,
+    props: true,
   },
   {
     path: '/recipe/:id',
     component: RecipeDetails,
+    props: true,
   },
   {
     path: '/add-recipe',
