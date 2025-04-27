@@ -8,6 +8,7 @@
     <ion-content>
       <ion-card v-if="recipe">
         <ion-card-header>
+          <img alt="recipe image" :src="recipe.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"/>
           <ion-card-title>{{ recipe.title }}</ion-card-title>
         </ion-card-header>
         <ion-card-content>
@@ -39,7 +40,6 @@
   </ion-page>
 </template>
 
-
 <script lang="ts">
 import { useRecipeStore } from '@/stores/recipeStore'
 import {
@@ -51,6 +51,7 @@ import {
   IonHeader,
   IonPage,
   IonSpinner,
+  IonThumbnail,
   IonTitle,
   IonToolbar,
 } from '@ionic/vue'
@@ -69,6 +70,7 @@ export default defineComponent({
     IonCardTitle,
     IonCardContent,
     IonSpinner,
+    IonThumbnail,
   },
   props: {
     id: {
@@ -80,24 +82,24 @@ export default defineComponent({
     const recipeStore = useRecipeStore()
 
     watch(
-    () => props,
-    (newId) => {
-      if (newId) {
-        recipeStore.fetchRecipeDetails(Number(newId.id))
-      }
-    },
-    { immediate: true }
-  );
+      () => props,
+      (newId) => {
+        if (newId) {
+          recipeStore.fetchRecipeDetails(Number(newId.id))
+        }
+      },
+      { immediate: true },
+    )
 
     const recipe = computed(() => recipeStore.recipeDetails)
     const ingredientsList = computed(() => {
-    if (!recipe.value || typeof recipe.value.ingredients !== 'string') return [];
-    return recipe.value.ingredients.split(',').map(item => item.trim());
-  });
+      if (!recipe.value || typeof recipe.value.ingredients !== 'string') return []
+      return recipe.value.ingredients.split(',').map((item) => item.trim())
+    })
 
     return {
       recipe,
-      ingredientsList
+      ingredientsList,
     }
   },
 })

@@ -12,14 +12,19 @@
       <ion-grid v-if="!loading">
         <ion-row>
           <ion-col size="12" size-md="6" v-for="recipe in recipes" :key="recipe.id">
-            <ion-card  @click="goToRecipe(recipe.id)">
+            <ion-card @click="goToRecipe(recipe.id)">
               <ion-card-header>
+                <img alt="recipe image" :src="recipe.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"/>
                 <ion-card-title>{{ recipe.title }}</ion-card-title>
                 <ion-card-subtitle>{{ recipe.description }}</ion-card-subtitle>
               </ion-card-header>
               <ion-card-content>
-                <ion-button @click.stop="goToRecipe(recipe.id)" color="primary">Szczegóły</ion-button>
-                <ion-button @click.stop="editRecipe(recipe.id)" color="secondary">Edytuj</ion-button>
+                <ion-button @click.stop="goToRecipe(recipe.id)" color="primary"
+                  >Szczegóły</ion-button
+                >
+                <ion-button @click.stop="editRecipe(recipe.id)" color="secondary"
+                  >Edytuj</ion-button
+                >
                 <ion-button @click.stop="deleteRecipe(recipe.id)" color="danger">Usuń</ion-button>
               </ion-card-content>
             </ion-card>
@@ -56,7 +61,8 @@ import {
   IonToolbar,
   useIonRouter,
   alertController,
-  IonCardContent, // Dodany import
+  IonCardContent,
+  IonThumbnail, // Dodany import
 } from '@ionic/vue'
 import { computed, defineComponent, ref, watch } from 'vue'
 import { useRecipeStore } from '../stores/recipeStore' // Twoje Pinia store
@@ -79,6 +85,7 @@ export default defineComponent({
     IonCardContent,
     IonCardSubtitle,
     IonButton,
+    IonThumbnail,
   },
   props: {
     id: {

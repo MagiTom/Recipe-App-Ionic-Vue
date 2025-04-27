@@ -35,6 +35,11 @@
         </ion-select>
       </ion-item>
 
+      <ion-item>
+        <ion-label>Dodaj obrazek</ion-label>
+        <input type="file" accept="image/*" @change="handleImageUpload" />
+      </ion-item>
+
       <ion-button expand="block" @click="addRecipe">Dodaj Przepis</ion-button>
     </ion-content>
   </ion-page>
@@ -42,9 +47,23 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, computed } from 'vue';
-import { useRecipeStore } from '../stores/recipeStore'; // Twoja pinia store
-import { useCategoryStore } from '../stores/categoryStore'; // Zakładam, że masz osobną store do kategorii
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonTextarea, IonSelect, IonSelectOption, IonButton } from '@ionic/vue';
+import { useRecipeStore } from '../stores/recipeStore';
+import { useCategoryStore } from '../stores/categoryStore';
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonItem,
+  IonLabel,
+  IonInput,
+  IonTextarea,
+  IonSelect,
+  IonSelectOption,
+  IonButton,
+  useIonRouter,
+} from '@ionic/vue';
 
 export default defineComponent({
   name: 'AddRecipe',
@@ -65,14 +84,20 @@ export default defineComponent({
   setup() {
     const recipeStore = useRecipeStore();
     const categoryStore = useCategoryStore();
-
+    const ionRouter = useIonRouter();
     const title = ref('');
     const description = ref('');
     const ingredients = ref('');
     const instructions = ref('');
     const category = ref<number | null>(null);
+    const image = ref<File | null>(null);
 
     const categories = computed(() => categoryStore.categories);
+
+    const handleImageUpload = (event: Event) => {
+      const file = (event.target as HTMLInputElement).files?.[0] || null;
+      image.value = file;
+    };
 
     const addRecipe = async () => {
       if (!title.value || !description.value || !ingredients.value || !instructions.value || category.value === null) {
@@ -80,13 +105,17 @@ export default defineComponent({
         return;
       }
 
-      await recipeStore.addRecipe({
-        title: title.value,
-        description: description.value,
-        ingredients: ingredients.value,
-        instructions: instructions.value,
-        category: category.value,
-      });
+      const formData = new FormData();
+      formData.append('title', title.value);
+      formData.append('description', description.value);
+      formData.append('ingredients', ingredients.value);
+      formData.append('instructions', instructions.value);
+      formData.append('category', category.value.toString());
+      if (image.value) {
+        formData.append('image', image.value);
+      }
+
+      await recipeStore.addRecipe(formData);
 
       alert('Przepis dodany!');
       title.value = '';
@@ -94,10 +123,12 @@ export default defineComponent({
       ingredients.value = '';
       instructions.value = '';
       category.value = null;
+      image.value = null;
+      ionRouter.back()
     };
 
     onMounted(() => {
-      // categoryStore.fetchCategories();
+      categoryStore.fetchCategories();
     });
 
     return {
@@ -106,7 +137,9 @@ export default defineComponent({
       ingredients,
       instructions,
       category,
+      image,
       categories,
+      handleImageUpload,
       addRecipe,
     };
   },

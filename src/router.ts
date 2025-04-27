@@ -1,5 +1,5 @@
-import { RouteRecordRaw } from 'vue-router';
 import { createRouter, createWebHistory } from '@ionic/vue-router';
+import { RouteRecordRaw } from 'vue-router';
 import Home from './pages/Home.vue';
 import Login from './pages/Login.vue';
 import Register from './pages/Register.vue';
@@ -53,7 +53,7 @@ const routes: Array<RouteRecordRaw> = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(process.env.BASE_URL),
   routes,
 });
 router.beforeEach(authGuard);
