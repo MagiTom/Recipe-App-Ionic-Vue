@@ -1,7 +1,7 @@
 <template>
   <ion-app>
     <!-- Główna treść aplikacji -->
-    <ion-router-outlet inert/>
+    <ion-router-outlet />
 
     <!-- Dolny pasek narzędzi -->
     <ion-footer>
