@@ -19,9 +19,16 @@ import '@ionic/vue/css/text-alignment.css'
 import '@ionic/vue/css/text-transformation.css'
 import '@ionic/vue/css/flex-utils.css'
 import '@ionic/vue/css/display.css'
+import { addIcons } from 'ionicons'
+import { arrowBack } from 'ionicons/icons'
+import { useAuthStore } from './stores/authStore'
 
 /* Theme variables */
-// import './theme/variables.css' 
+// import './theme/variables.css'
+
+addIcons({
+  'arrow-back': arrowBack,
+});
 
 const app = createApp(App)
 
@@ -30,6 +37,8 @@ const pinia = createPinia()
 app.use(IonicVue)
 app.use(router)
 app.use(pinia)
+const authStore = useAuthStore();
+authStore.initializeAuth();
 
 router.isReady().then(() => {
   app.mount('#app')

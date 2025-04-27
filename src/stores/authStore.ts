@@ -15,7 +15,6 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = response.data.refresh;
       localStorage.setItem('token', this.token);
       localStorage.setItem('refreshToken', this.refreshToken);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
     },
 
     async register(username: string, email: string, password: string) {
@@ -24,7 +23,6 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = response.data.refresh;
       localStorage.setItem('token', this.token);
       localStorage.setItem('refreshToken', this.refreshToken);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
     },
 
     logout() {
@@ -33,14 +31,32 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = '';
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
-      delete axios.defaults.headers.common['Authorization'];
     },
 
     initializeAuth() {
       const token = localStorage.getItem('token');
-      if (token) {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (token && refreshToken) {
         this.token = token;
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        this.refreshToken = refreshToken;
+      }
+    },
+
+    async refreshAccessToken() {
+      if (!this.refreshToken) {
+        this.logout();
+        // throw new Error('Brak odświeżającego tokena.');
+      }
+
+      try {
+        const response = await axios.post('http://localhost:8000/api/refresh/', {
+          refresh: this.refreshToken,
+        });
+        this.token = response.data.access;
+        localStorage.setItem('token', this.token);
+      } catch (error) {
+        this.logout();
+        // throw new Error('Nie udało się odświeżyć tokena.');
       }
     },
   },

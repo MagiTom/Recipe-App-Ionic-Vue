@@ -9,10 +9,12 @@
 
     <ion-content class="ion-padding">
       <ion-button expand="block" @click="showModal = true">Zarządzaj kategoriami</ion-button>
-
-      <ion-list>
-        <ion-item v-for="category in categoryStore.categories" :key="category.id" button>
-          <span @click="goToCategory(category.id)" style="flex-grow: 1">{{ category.name }}</span>
+        <ion-list>
+        <ion-item button @click="goToCategory(null)">
+          <span style="flex-grow: 1">Wszystkie przepisy</span>
+        </ion-item>
+        <ion-item @click="goToCategory(category.id)" v-for="category in categoryStore.categories" :key="category.id" button>
+          <span style="flex-grow: 1">{{ category.name }}</span>
         </ion-item>
       </ion-list>
 
@@ -53,7 +55,7 @@
 
 <script lang="ts">
 import { defineComponent, onMounted, ref } from 'vue'
-import { useIonRouter } from '@ionic/vue'
+import { IonModal, useIonRouter } from '@ionic/vue'
 import {
   IonPage,
   IonHeader,
@@ -61,6 +63,7 @@ import {
   IonTitle,
   IonContent,
   IonButton,
+  IonButtons,
   IonList,
   IonItem,
   IonLabel,
@@ -82,6 +85,8 @@ export default defineComponent({
     IonItem,
     IonLabel,
     IonInput,
+    IonModal,
+    IonButtons
   },
   setup() {
     const mainStore = useMainStore()
@@ -98,7 +103,7 @@ export default defineComponent({
       router.push('/login')
     }
 
-    const goToCategory = (categoryId: number) => {
+    const goToCategory = (categoryId: number | null) => {
       router.push(`/category/${categoryId}`)
     }
 

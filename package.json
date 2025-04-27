@@ -14,9 +14,10 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@ionic/vue": "^8.5.4",
+    "@ionic/vue": "^8.5.5",
     "@ionic/vue-router": "^8.5.4",
     "axios": "^1.8.4",
+    "ionicons": "^7.4.0",
     "pinia": "^3.0.2",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0",
