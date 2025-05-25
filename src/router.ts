@@ -1,30 +1,33 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
-import { RouteRecordRaw } from 'vue-router';
+import type { RouteRecordRaw } from 'vue-router';
 import Home from './pages/Home.vue';
 import Login from './pages/Login.vue';
 import Register from './pages/Register.vue';
 import RecipeList from './pages/RecipeList.vue';
 import RecipeDetails from './pages/RecipeDetails.vue';
 import AddRecipe from './pages/AddRecipe.vue';
+import EditRecipe from './pages/EditRecipe.vue';
 import { authGuard } from './guards/authGuard';
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/home', // Redirect musi być używany bez komponentu
+    redirect: '/home',
   },
   {
     path: '/home',
     name: 'Home',
-    component: Home, // Home musi być poprawnie zaimportowany
-    beforeEnter: authGuard,
+    component: Home,
+    meta: { requiresAuth: true },
   },
   {
     path: '/login',
+    name: 'Login',
     component: Login,
   },
   {
     path: '/register',
+    name: 'Register',
     component: Register,
   },
   {
@@ -46,7 +49,7 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/edit-recipe/:id',
-    component: () => import('./pages/EditRecipe.vue'),
+    component: EditRecipe,
     props: true,
     meta: { requiresAuth: true },
   }
@@ -56,6 +59,8 @@ const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
 });
+
+
 router.beforeEach(authGuard);
 
 export default router;

@@ -4,7 +4,7 @@
     <ion-router-outlet />
 
     <!-- Dolny pasek narzędzi -->
-    <ion-footer>
+    <ion-footer v-if="showFooter">
       <ion-toolbar>
         <!-- Przycisk Wstecz -->
         <ion-buttons slot="start">
@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref, watch } from 'vue'
 import {
   IonApp,
   IonFooter,
@@ -34,6 +34,7 @@ import {
 } from '@ionic/vue';
 import { useIonRouter } from '@ionic/vue';
 import { useCategoryStore } from '@/stores/categoryStore';
+import { useRoute } from 'vue-router'
 
 export default defineComponent({
   name: 'App',
@@ -48,7 +49,12 @@ export default defineComponent({
   },
   setup() {
     const router = useIonRouter();
+    const route = useRoute();
     const categoryStore = useCategoryStore();
+    const showFooter = computed(() => {
+      console.log('route', route?.path)
+      return !['/login', '/home'].includes(route?.path);
+    });
 
     const categories = ref([
       { id: null, name: 'Wszystkie' }, // Domyślna kategoria "Wszystkie"
@@ -73,6 +79,7 @@ export default defineComponent({
       selectedCategory,
       goBack,
       selectCategory,
+      showFooter
     };
   },
 });

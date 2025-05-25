@@ -1,30 +1,24 @@
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Rejestracja</ion-title>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content class="ion-padding">
+    <ion-content class="ion-padding login">
+      <div class="register-container">
       <ion-card class="register-card">
         <ion-card-header>
-          <ion-card-title class="ion-text-center">Zarejestruj się</ion-card-title>
+          <ion-text color="primary">
+            <h1 class="ion-text-center">Zarejestruj się!</h1>
+          </ion-text>
         </ion-card-header>
         <ion-card-content>
           <ion-item>
-            <ion-label position="floating">Nazwa użytkownika</ion-label>
-            <ion-input v-model="username" type="text" required></ion-input>
+            <ion-input label-placement="floating" label="Nazwa użytkownika" v-model="username" type="text" required></ion-input>
           </ion-item>
 
           <ion-item>
-            <ion-label position="floating">E-mail</ion-label>
-            <ion-input v-model="email" type="email" required></ion-input>
+            <ion-input label-placement="floating" label="E-mail" v-model="email" type="email" required :clear-input="true"></ion-input>
           </ion-item>
 
           <ion-item>
-            <ion-label position="floating">Hasło</ion-label>
-            <ion-input v-model="password" type="password" required></ion-input>
+            <ion-input label-placement="floating" label="Hasło" v-model="password" type="password" :clear-input="true" required></ion-input>
           </ion-item>
 
           <ion-button expand="block" class="ion-margin-top" :disabled="loading" @click="register">
@@ -36,6 +30,7 @@
           </ion-button>
         </ion-card-content>
       </ion-card>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -58,6 +53,7 @@ import {
   IonInput,
   IonButton,
 } from '@ionic/vue';
+import { useToast } from '@/composables/useToast.ts'
 
 export default defineComponent({
   name: 'Register',
@@ -82,19 +78,20 @@ export default defineComponent({
     const email = ref('');
     const password = ref('');
     const loading = ref(false);
+    const { presentToast } = useToast();
 
     const register = async () => {
       if (!username.value || !email.value || !password.value) {
-        alert('Wprowadź nazwę użytkownika, email i hasło!');
+        await presentToast('Wprowadź nazwę użytkownika, email i hasło!', 'warning');
         return;
       }
 
       loading.value = true;
       try {
         await authStore.register(username.value, email.value, password.value);
-        alert('Rejestracja zakończona sukcesem!');
+        await presentToast('Rejestracja zakończona sukcesem!', 'success');
       } catch (err: any) {
-        alert('Błąd rejestracji: ' + (err.response?.data?.detail || err.message));
+        await presentToast('Błąd rejestracji: ' + (err.response?.data?.details?.detail), 'danger');
       } finally {
         loading.value = false;
       }
@@ -106,10 +103,19 @@ export default defineComponent({
 </script>
 
 <style scoped>
+ion-content.login {
+  --background: var(--ion-color-primary) url('@/assets/background.png') no-repeat center center / cover;
+}
+
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 56px);
+}
 .register-card {
+  width: 100%;
   max-width: 400px;
-  margin: 40px auto;
-  padding: 16px;
 }
 
 ion-card-title {

@@ -24,22 +24,22 @@ import { arrowBack } from 'ionicons/icons'
 import { useAuthStore } from './stores/authStore'
 
 /* Theme variables */
-// import './theme/variables.css'
+import './theme/variables.css'
 
 addIcons({
   'arrow-back': arrowBack,
-});
+})
 
 const app = createApp(App)
 
 const pinia = createPinia()
 
-app.use(IonicVue)
 app.use(router)
+app.use(IonicVue)
 app.use(pinia)
-const authStore = useAuthStore();
-authStore.initializeAuth();
 
 router.isReady().then(() => {
+  const { initializeAuth } = useAuthStore()
+  initializeAuth()
   app.mount('#app')
 })

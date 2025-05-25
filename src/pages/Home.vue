@@ -136,8 +136,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref } from 'vue'
-import { IonModal, IonThumbnail, useIonRouter } from '@ionic/vue'
+import { defineComponent, inject, onBeforeUnmount, onMounted, type Ref, ref } from 'vue'
+import {
+  IonModal,
+  IonThumbnail,
+  onIonViewDidLeave,
+  onIonViewWillEnter,
+  onIonViewWillLeave,
+  useIonRouter
+} from '@ionic/vue'
 import {
   IonPage,
   IonHeader,
@@ -153,6 +160,8 @@ import {
 } from '@ionic/vue'
 import { useMainStore } from '../store'
 import { useCategoryStore } from '../stores/categoryStore'
+import { useAuthStore } from '@/stores/authStore.ts'
+import { useUiStore } from '@/stores/uiStore.ts'
 
 export default defineComponent({
   name: 'Home',
@@ -173,9 +182,9 @@ export default defineComponent({
   },
   setup() {
     const mainStore = useMainStore()
+    const authStore = useAuthStore()
     const categoryStore = useCategoryStore()
     const router = useIonRouter()
-
     const newCategoryName = ref('')
     const newCategoryImage = ref<File | null>(null)
     const loading = ref(false)
@@ -184,11 +193,15 @@ export default defineComponent({
     const editCategoryData = ref({ id: null, name: '', image: null })
     const editCategoryImagePreview = ref<string | null>(null)
 
+    onMounted(() => {
+      categoryStore.fetchCategories()
+    });
+
     const logout = () => {
-      mainStore.clearUser()
-      alert('Zostałeś wylogowany!')
-      router.push('/login')
-    }
+      authStore.logout();
+      mainStore.clearUser();
+      router.push('/login');
+    };
 
     const goToCategory = (categoryId: number | null) => {
       router.push(`/category/${categoryId}`)
@@ -282,10 +295,6 @@ export default defineComponent({
         alert('Błąd usuwania kategorii: ' + (err.response?.data?.detail || err.message))
       }
     }
-
-    onMounted(() => {
-      categoryStore.fetchCategories()
-    })
 
     return {
       mainStore,
