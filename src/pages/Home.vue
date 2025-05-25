@@ -11,40 +11,46 @@
 
       <p class="category">Wybierz kategorię</p>
 
-      <ion-list>
-        <ion-card button @click="goToCategory(null)">
-          <ion-card-header>
-            <div class="card-header">
-              <ion-thumbnail>
-                <img
-                  alt="Silhouette of mountains"
-                  src="https://ionicframework.com/docs/img/demos/thumbnail.svg"
-                />
-              </ion-thumbnail>
-              <h2>Wszystkie przepisy</h2>
-            </div>
-          </ion-card-header>
-        </ion-card>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="12" size-md="6">
+            <ion-card button @click="goToCategory(null)">
+              <ion-card-header>
+                <div class="card-header">
+                  <ion-thumbnail>
+                    <img
+                      alt="Silhouette of mountains"
+                      src="https://ionicframework.com/docs/img/demos/thumbnail.svg"
+                    />
+                  </ion-thumbnail>
+                  <h2>Wszystkie przepisy</h2>
+                </div>
+              </ion-card-header>
+            </ion-card>
+          </ion-col>
+          <ion-col size="12" size-md="6"   v-for="category in categoryStore.categories"
+                     :key="category.id">
+            <ion-card
 
-        <ion-card
-          v-for="category in categoryStore.categories"
-          :key="category.id"
-          button
-          @click="goToCategory(category.id)"
-        >
-          <ion-card-header>
-            <div class="card-header">
-              <ion-thumbnail>
-                <img
-                  alt="Category image"
-                  :src="category.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"
-                />
-              </ion-thumbnail>
-              <h2>{{ category.name }}</h2>
-            </div>
-          </ion-card-header>
-        </ion-card>
-      </ion-list>
+              button
+              @click="goToCategory(category.id)"
+            >
+              <ion-card-header>
+                <div class="card-header">
+                  <ion-thumbnail>
+                    <img
+                      alt="Category image"
+                      :src="category.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"
+                    />
+                  </ion-thumbnail>
+                  <h2>{{ category.name }}</h2>
+                </div>
+              </ion-card-header>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+
 
       <!-- MODAL -->
       <ion-modal :is-open="showModal" @didDismiss="showModal = false">
