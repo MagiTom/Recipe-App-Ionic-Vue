@@ -13,7 +13,7 @@
           </div>
           <img
             class="recipe__image"
-            :src="recipe.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"
+            :src="imageToShow"
             alt="recipe image"
           />
         </div>
@@ -31,7 +31,7 @@
                 </ion-badge>
                 <h4 class="recipe__subtitle">Strona</h4>
                 </div>
-                  <p class="recipe__description">{{ recipe.description }}</p>
+                  <a :href="recipe.url" class="recipe__description">{{ recipe.url }}</a>
               </ion-col>
               <ion-col size="12">
                 <div v-if="ingredientsList.length">
@@ -77,6 +77,7 @@ import {
 } from '@ionic/vue'
 import { computed, defineComponent, watch } from 'vue'
 import { createOutline, globeOutline, trashOutline } from 'ionicons/icons'
+import { getImageToShow } from '@/utilis/imageUtils.ts'
 
 export default defineComponent({
   name: 'RecipeDetails',
@@ -153,11 +154,16 @@ export default defineComponent({
       router.push(`/edit-recipe/${recipeId}`)
     }
 
+    const imageToShow = computed(() =>
+      getImageToShow(recipe.value?.image ?? null, recipe.value?.url ?? null)
+    )
+
     return {
       recipe,
       ingredientsList,
       deleteRecipe,
       editRecipe,
+      imageToShow
     }
   },
 })

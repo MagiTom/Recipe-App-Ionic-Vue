@@ -6,29 +6,27 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
+    <ion-content :scroll-events="true" ref="contentRef">
+      <ion-searchbar
+        v-model="searchQuery"
+        placeholder="Szukaj po tytule"
+      />
       <ion-loading :is-open="loading" message="Ładowanie przepisów..." spinner="crescent" />
 
-      <ion-grid v-if="!loading">
+      <ion-grid>
         <ion-row>
           <ion-col size="6" size-md="4" size-lg="3" v-for="recipe in recipes" :key="recipe.id">
             <ion-card @click="goToRecipe(recipe.id)">
               <ion-card-header>
                 <ion-button class="nextBtn" shape="round">
-                  <ion-icon slot="icon-only" :icon="arrowForwardOutline()"></ion-icon>
+                  <ion-icon slot="icon-only" :icon="arrowForwardOutline" />
                 </ion-button>
-                <img alt="recipe image" :src="recipe.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"/>
-                <ion-card-title>
-                 {{ recipe.title }}
-                </ion-card-title>
-<!--                <ion-card-subtitle>{{ recipe.description }}</ion-card-subtitle>-->
+                <img
+                  alt="recipe image"
+                  :src="getImageToShow(recipe.image, recipe.url)"
+                />
+                <ion-card-title>{{ recipe.title }}</ion-card-title>
               </ion-card-header>
-<!--              <ion-card-content>-->
-<!--                <ion-button @click.stop="editRecipe(recipe.id)" color="secondary"-->
-<!--                  >Edytuj</ion-button-->
-<!--                >-->
-<!--                <ion-button @click.stop="deleteRecipe(recipe.id)" color="danger">Usuń</ion-button>-->
-<!--              </ion-card-content>-->
             </ion-card>
           </ion-col>
         </ion-row>
@@ -38,17 +36,19 @@
         Brak przepisów w tej kategorii 😥
       </div>
 
-<!--      <ion-button expand="full" router-link="/add-recipe" class="add-button" v-if="!loading">-->
-<!--        Dodaj Przepis-->
-<!--      </ion-button>-->
-      <ion-button class="add-button" size="large" router-link="/add-recipe" shape="round" v-if="!loading">
-        <ion-icon slot="icon-only" :icon="add()"></ion-icon>
+      <ion-button
+        class="add-button"
+        size="large"
+        router-link="/add-recipe"
+        shape="round"
+        v-if="!loading"
+      >
+        <ion-icon slot="icon-only" :icon="addIcon" />
       </ion-button>
-<!--      <ion-fab v-if="!loading">-->
-<!--        <ion-fab-button router-link="/add-recipe">-->
-<!--          <ion-icon :icon="add()"></ion-icon>-->
-<!--        </ion-fab-button>-->
-<!--      </ion-fab>-->
+
+      <ion-infinite-scroll @ionInfinite="handleInfinite" threshold="100px" :disabled="!hasMore">
+        <ion-infinite-scroll-content loading-spinner="dots" loading-text="Ładowanie..." />
+      </ion-infinite-scroll>
     </ion-content>
   </ion-page>
 </template>
@@ -70,24 +70,21 @@ import {
   IonTitle,
   IonToolbar,
   useIonRouter,
-  alertController,
   IonCardContent,
-  IonThumbnail, // Dodany import
+  IonThumbnail,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  IonSearchbar,
+  IonIcon,
 } from '@ionic/vue'
-import { computed, defineComponent, ref, watch } from 'vue'
+import { defineComponent, ref, watch, onMounted } from 'vue'
 import { useRecipeStore } from '../stores/recipeStore'
-import { add, arrowForwardOutline } from 'ionicons/icons' // Twoje Pinia store
+import { add, arrowForwardOutline } from 'ionicons/icons'
+import { getImageToShow } from '@/utilis/imageUtils.ts'
 
 export default defineComponent({
   name: 'RecipeList',
-  methods: {
-    arrowForwardOutline() {
-      return arrowForwardOutline
-    },
-    add() {
-      return add
-    }
-  },
+  methods: { getImageToShow },
   components: {
     IonLoading,
     IonPage,
@@ -105,6 +102,10 @@ export default defineComponent({
     IonCardSubtitle,
     IonButton,
     IonThumbnail,
+    IonInfiniteScroll,
+    IonInfiniteScrollContent,
+    IonSearchbar,
+    IonIcon,
   },
   props: {
     id: {
@@ -116,37 +117,80 @@ export default defineComponent({
     const recipeStore = useRecipeStore()
     const router = useIonRouter()
     const loading = ref(false)
+    const nextPage = ref(1)
+    const hasMore = ref(true)
+    const searchQuery = ref('')
+    const categoryId = ref(Number(props.id))
+    const recipes = ref([])
+    const contentRef = ref<HTMLElement | null>(null)
 
-    const recipes = computed(() => recipeStore.recipes)
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-    const fetchRecipes = async (categoryId: number) => {
+    const loadRecipes = async (reset = false) => {
+      if (loading.value) return
       loading.value = true
-      if (!categoryId) {
-        await recipeStore.fetchAllRecipes()
-      } else {
-        await recipeStore.fetchRecipesByCategory(categoryId)
+
+      if (reset) {
+        recipes.value = []
+        nextPage.value = 1
+        hasMore.value = true
       }
+
+      const response = await recipeStore.fetchPaginatedRecipes({
+        page: nextPage.value,
+        title: searchQuery.value,
+        category: categoryId.value,
+      })
+
+      if (response?.results?.length) {
+        recipes.value.push(...response.results)
+        nextPage.value++
+        hasMore.value = !!response.next
+      } else {
+        if (!reset) {
+          hasMore.value = false
+        }
+      }
+
       loading.value = false
     }
 
-    const goToRecipe = (recipeId: number) => {
-      router.push(`/recipe/${recipeId}`)
+    const handleInfinite = async (event: CustomEvent) => {
+      console.log('adsfdfs')
+      await loadRecipes(false)
+      ;(event.target as HTMLIonInfiniteScrollElement).complete()
     }
 
+    watch(searchQuery, () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(async () => {
+        await loadRecipes(true)
+      }, 500)
+    })
+
     watch(
-      () => props,
+      () => props.id,
       (newId) => {
         if (newId) {
-          fetchRecipes(Number(newId.id))
+          categoryId.value = Number(newId)
+          loadRecipes(true)
         }
       },
-      { immediate: true },
+      { immediate: true }
     )
+
+    const goToRecipe = (id: number) => router.push(`/recipe/${id}`)
 
     return {
       recipes,
       loading,
       goToRecipe,
+      handleInfinite,
+      searchQuery,
+      hasMore,
+      contentRef,
+      arrowForwardOutline,
+      addIcon: add,
     }
   },
 })
@@ -164,14 +208,13 @@ ion-card-title {
   margin-top: 1rem;
 }
 
-ion-card-header .nextBtn{
+ion-card-header .nextBtn {
   position: absolute;
   right: 15px;
   top: 15px;
   --background: white;
   --color: var(--ion-color-primary);
 }
-
 
 ion-card img {
   height: 97px;

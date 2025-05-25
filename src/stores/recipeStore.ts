@@ -31,6 +31,25 @@ export const useRecipeStore = defineStore('recipe', {
       this.recipes = response.data
     },
 
+    async fetchPaginatedRecipes({ page = 1, title = '', category = null }: {
+      page: number
+      title?: string
+      category?: number | null
+    }) {
+      try {
+        const params = new URLSearchParams()
+        params.append('page', page.toString())
+        if (title) params.append('title', title)
+        if (category !== null) params.append('category', category.toString())
+
+        const response = await apiClient.get(`/recipes/?${params.toString()}`)
+        return response.data // <-- tutaj spodziewamy się paginowanego obiektu { results, next, ... }
+      } catch (error) {
+        console.error('Błąd podczas ładowania przepisów:', error)
+        return { results: [], next: null }
+      }
+    },
+
     async fetchRecipeDetails(recipeId: number) {
       const response = await apiClient.get(`/recipes/${recipeId}/`)
       this.recipeDetails = response.data
@@ -57,7 +76,6 @@ export const useRecipeStore = defineStore('recipe', {
       if (index !== -1) {
         this.recipes[index] = response.data.data
       }
-      console.log(this.recipes)
     },
   },
 })

@@ -11,7 +11,7 @@
       </ion-item>
 
       <ion-item>
-        <ion-textarea auto-grow label-placement="floating" label="Opis" v-model="description"></ion-textarea>
+        <ion-textarea auto-grow label-placement="floating" label="Opis" v-model="url"></ion-textarea>
       </ion-item>
 
       <ion-item>
@@ -131,7 +131,7 @@ export default defineComponent({
     const categoryStore = useCategoryStore()
     const ionRouter = useIonRouter()
     const title = ref('')
-    const description = ref('')
+    const url = ref('')
     const ingredients = ref('')
     const instructions = ref('')
     const category = ref<number | null>(null)
@@ -170,7 +170,7 @@ export default defineComponent({
     const addRecipe = async () => {
       if (
         !title.value ||
-        !description.value ||
+        !url.value ||
         !ingredients.value ||
         !instructions.value ||
         category.value === null
@@ -181,7 +181,7 @@ export default defineComponent({
 
       const formData = new FormData()
       formData.append('title', title.value)
-      formData.append('description', description.value)
+      formData.append('description', url.value)
       formData.append('ingredients', ingredients.value)
       formData.append('instructions', instructions.value)
       formData.append('category', category.value.toString())
@@ -193,7 +193,7 @@ export default defineComponent({
 
       await presentToast('Przepis dodany!', 'success');
       title.value = ''
-      description.value = ''
+      url.value = ''
       ingredients.value = ''
       instructions.value = ''
       category.value = null
@@ -207,7 +207,7 @@ export default defineComponent({
 
     return {
       title,
-      description,
+      url,
       ingredients,
       instructions,
       category,

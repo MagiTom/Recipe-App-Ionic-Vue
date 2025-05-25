@@ -11,7 +11,7 @@
       </ion-item>
 
       <ion-item>
-        <ion-textarea auto-grow label-placement="floating" label="Opis" v-model="description"></ion-textarea>
+        <ion-textarea auto-grow label-placement="floating" label="Opis" v-model="url"></ion-textarea>
       </ion-item>
 
       <ion-item>
@@ -149,7 +149,7 @@ export default {
     const editRecipeData = ref<{
       id: number
       title: string
-      description: string
+      url: string
       ingredients: string
       instructions: string
       category: number
@@ -162,7 +162,7 @@ export default {
         editRecipeData.value = { ...recipe }
         if (recipe) {
           title.value = recipe.title
-          description.value = recipe.description
+          url.value = recipe.url
           ingredients.value = recipe.ingredients
           instructions.value = recipe.instructions
           category.value = recipe.category
@@ -217,7 +217,7 @@ export default {
       try {
         const formData = new FormData()
         formData.append('title', title.value)
-        formData.append('description', description.value)
+        formData.append('url', url.value)
         formData.append('ingredients', ingredients.value)
         formData.append('instructions', instructions.value)
         formData.append('category', category.value?.toString() || '')
@@ -247,7 +247,7 @@ export default {
 
     return {
       title,
-      description,
+      url,
       ingredients,
       instructions,
       category,
