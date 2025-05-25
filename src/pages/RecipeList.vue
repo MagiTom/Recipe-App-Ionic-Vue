@@ -11,22 +11,24 @@
 
       <ion-grid v-if="!loading">
         <ion-row>
-          <ion-col size="12" size-md="6" v-for="recipe in recipes" :key="recipe.id">
+          <ion-col size="6" size-md="4" size-lg="3" v-for="recipe in recipes" :key="recipe.id">
             <ion-card @click="goToRecipe(recipe.id)">
               <ion-card-header>
+                <ion-button class="nextBtn" shape="round">
+                  <ion-icon slot="icon-only" :icon="arrowForwardOutline()"></ion-icon>
+                </ion-button>
                 <img alt="recipe image" :src="recipe.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"/>
-                <ion-card-title>{{ recipe.title }}</ion-card-title>
-                <ion-card-subtitle>{{ recipe.description }}</ion-card-subtitle>
+                <ion-card-title>
+                 {{ recipe.title }}
+                </ion-card-title>
+<!--                <ion-card-subtitle>{{ recipe.description }}</ion-card-subtitle>-->
               </ion-card-header>
-              <ion-card-content>
-                <ion-button @click.stop="goToRecipe(recipe.id)" color="primary"
-                  >Szczegóły</ion-button
-                >
-                <ion-button @click.stop="editRecipe(recipe.id)" color="secondary"
-                  >Edytuj</ion-button
-                >
-                <ion-button @click.stop="deleteRecipe(recipe.id)" color="danger">Usuń</ion-button>
-              </ion-card-content>
+<!--              <ion-card-content>-->
+<!--                <ion-button @click.stop="editRecipe(recipe.id)" color="secondary"-->
+<!--                  >Edytuj</ion-button-->
+<!--                >-->
+<!--                <ion-button @click.stop="deleteRecipe(recipe.id)" color="danger">Usuń</ion-button>-->
+<!--              </ion-card-content>-->
             </ion-card>
           </ion-col>
         </ion-row>
@@ -36,9 +38,17 @@
         Brak przepisów w tej kategorii 😥
       </div>
 
-      <ion-button expand="full" router-link="/add-recipe" class="add-button" v-if="!loading">
-        Dodaj Przepis
+<!--      <ion-button expand="full" router-link="/add-recipe" class="add-button" v-if="!loading">-->
+<!--        Dodaj Przepis-->
+<!--      </ion-button>-->
+      <ion-button class="add-button" size="large" router-link="/add-recipe" shape="round" v-if="!loading">
+        <ion-icon slot="icon-only" :icon="add()"></ion-icon>
       </ion-button>
+<!--      <ion-fab v-if="!loading">-->
+<!--        <ion-fab-button router-link="/add-recipe">-->
+<!--          <ion-icon :icon="add()"></ion-icon>-->
+<!--        </ion-fab-button>-->
+<!--      </ion-fab>-->
     </ion-content>
   </ion-page>
 </template>
@@ -65,10 +75,19 @@ import {
   IonThumbnail, // Dodany import
 } from '@ionic/vue'
 import { computed, defineComponent, ref, watch } from 'vue'
-import { useRecipeStore } from '../stores/recipeStore' // Twoje Pinia store
+import { useRecipeStore } from '../stores/recipeStore'
+import { add, arrowForwardOutline } from 'ionicons/icons' // Twoje Pinia store
 
 export default defineComponent({
   name: 'RecipeList',
+  methods: {
+    arrowForwardOutline() {
+      return arrowForwardOutline
+    },
+    add() {
+      return add
+    }
+  },
   components: {
     IonLoading,
     IonPage,
@@ -114,40 +133,6 @@ export default defineComponent({
       router.push(`/recipe/${recipeId}`)
     }
 
-    const deleteRecipe = async (recipeId: number) => {
-      const alert = await alertController.create({
-        header: 'Potwierdzenie',
-        message: 'Czy na pewno chcesz usunąć ten przepis?',
-        buttons: [
-          {
-            text: 'Anuluj',
-            role: 'cancel',
-            handler: () => {
-              console.log('Użytkownik anulował usunięcie przepisu.')
-            },
-          },
-          {
-            text: 'Usuń',
-            role: 'confirm',
-            handler: async () => {
-              try {
-                await recipeStore.deleteRecipe(recipeId)
-                console.log(`Przepis o ID ${recipeId} został usunięty.`)
-              } catch (error) {
-                console.error('Błąd podczas usuwania przepisu:', error)
-              }
-            },
-          },
-        ],
-      })
-
-      await alert.present() // Wyświetlenie alertu
-    }
-
-    const editRecipe = (recipeId: number) => {
-      router.push(`/edit-recipe/${recipeId}`)
-    }
-
     watch(
       () => props,
       (newId) => {
@@ -162,8 +147,6 @@ export default defineComponent({
       recipes,
       loading,
       goToRecipe,
-      deleteRecipe,
-      editRecipe,
     }
   },
 })
@@ -176,12 +159,34 @@ ion-card {
   margin-bottom: 16px;
 }
 
+ion-card-title {
+  font-weight: bolder;
+  margin-top: 1rem;
+}
+
+ion-card-header .nextBtn{
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  --background: white;
+  --color: var(--ion-color-primary);
+}
+
+
+ion-card img {
+  height: 97px;
+  object-fit: cover;
+  object-position: center;
+}
+
 ion-card:hover {
   transform: scale(1.02);
 }
 
 .add-button {
-  margin: 16px;
+  position: fixed;
+  right: 1rem;
+  bottom: 4rem;
 }
 
 .empty-message {

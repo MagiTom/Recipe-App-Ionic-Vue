@@ -7,28 +7,33 @@
     </ion-header>
     <ion-content>
       <ion-item>
-        <ion-label position="floating">Tytuł</ion-label>
-        <ion-input v-model="title"></ion-input>
+        <ion-input label-placement="floating" label="Tytuł" v-model="title"></ion-input>
       </ion-item>
 
       <ion-item>
-        <ion-label position="floating">Opis</ion-label>
-        <ion-textarea v-model="description"></ion-textarea>
+        <ion-textarea auto-grow label-placement="floating" label="Opis" v-model="description"></ion-textarea>
       </ion-item>
 
       <ion-item>
-        <ion-label position="floating">Składniki</ion-label>
-        <ion-textarea v-model="ingredients"></ion-textarea>
+        <ion-textarea
+          auto-grow
+          label-placement="floating"
+          label="Składniki"
+          v-model="ingredients"
+        ></ion-textarea>
       </ion-item>
 
       <ion-item>
-        <ion-label position="floating">Instrukcje</ion-label>
-        <ion-textarea v-model="instructions"></ion-textarea>
+        <ion-textarea
+          auto-grow
+          label-placement="floating"
+          label="Instrukcje"
+          v-model="instructions"
+        ></ion-textarea>
       </ion-item>
 
       <ion-item>
-        <ion-label>Kategoria</ion-label>
-        <ion-select v-model="category">
+        <ion-select label-placement="floating" label="Kategoria" v-model="category">
           <ion-select-option v-for="cat in categories" :key="cat.id" :value="cat.id">
             {{ cat.name }}
           </ion-select-option>
@@ -37,18 +42,45 @@
 
       <ion-item>
         <ion-label>Dodaj obrazek</ion-label>
-        <input type="file" accept="image/*" @change="handleImageUpload" />
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          hidden
+          @change="handleImageUpload"
+        />
+        <ion-button
+          disable="imagePreview"
+          color="danger"
+          fill="outline"
+          size="large"
+          @click="removeNewImage"
+        >
+          <ion-icon slot="icon-only" :icon="trashOutline()"></ion-icon>
+        </ion-button>
+        <ion-button fill="outline" size="large" @click="$refs.fileInput.click()">
+          <ion-icon slot="icon-only" :icon="add()"></ion-icon>
+        </ion-button>
       </ion-item>
 
+      <ion-item>
+        <ion-label>Podgląd</ion-label>
+        <ion-thumbnail slot="end" @click="$refs.fileInput.click()">
+          <img
+            :src="imagePreview || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"
+            alt="Category image"
+          />
+        </ion-thumbnail>
+      </ion-item>
       <ion-button expand="block" @click="addRecipe">Dodaj Przepis</ion-button>
     </ion-content>
   </ion-page>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from 'vue';
-import { useRecipeStore } from '../stores/recipeStore';
-import { useCategoryStore } from '../stores/categoryStore';
+import { defineComponent, ref, onMounted, computed } from 'vue'
+import { useRecipeStore } from '../stores/recipeStore'
+import { useCategoryStore } from '../stores/categoryStore'
 import {
   IonPage,
   IonHeader,
@@ -63,11 +95,24 @@ import {
   IonSelectOption,
   IonButton,
   useIonRouter,
-} from '@ionic/vue';
+  IonIcon, IonThumbnail
+} from '@ionic/vue'
+import { add, trashOutline } from 'ionicons/icons'
+import { useToast } from '@/composables/useToast.ts'
 
 export default defineComponent({
   name: 'AddRecipe',
+  methods: {
+    add() {
+      return add
+    },
+    trashOutline() {
+      return trashOutline
+    }
+  },
   components: {
+    IonThumbnail,
+    IonIcon,
     IonPage,
     IonHeader,
     IonToolbar,
@@ -82,54 +127,83 @@ export default defineComponent({
     IonButton,
   },
   setup() {
-    const recipeStore = useRecipeStore();
-    const categoryStore = useCategoryStore();
-    const ionRouter = useIonRouter();
-    const title = ref('');
-    const description = ref('');
-    const ingredients = ref('');
-    const instructions = ref('');
-    const category = ref<number | null>(null);
-    const image = ref<File | null>(null);
+    const recipeStore = useRecipeStore()
+    const categoryStore = useCategoryStore()
+    const ionRouter = useIonRouter()
+    const title = ref('')
+    const description = ref('')
+    const ingredients = ref('')
+    const instructions = ref('')
+    const category = ref<number | null>(null)
+    const image = ref<File | null>(null)
+    const newImage = ref<File | null>(null)
+    const imagePreview = ref<string | null>(null)
+    const fileInput = ref<HTMLInputElement | null>(null)
+    const { presentToast } = useToast();
 
-    const categories = computed(() => categoryStore.categories);
+    const categories = computed(() => categoryStore.categories)
 
     const handleImageUpload = (event: Event) => {
-      const file = (event.target as HTMLInputElement).files?.[0] || null;
-      image.value = file;
-    };
+      const file = (event.target as HTMLInputElement).files?.[0] || null
+
+        newImage.value = file
+
+        if (file && file.type.startsWith('image/')) {
+          const reader = new FileReader()
+          reader.onload = () => {
+            imagePreview.value = reader.result as string
+          }
+          reader.readAsDataURL(file)
+        } else {
+          imagePreview.value = null
+        }
+    }
+
+    const removeNewImage = () => {
+      newImage.value = null
+      imagePreview.value = null
+      if (fileInput.value) {
+        fileInput.value.value = ''
+      }
+    }
 
     const addRecipe = async () => {
-      if (!title.value || !description.value || !ingredients.value || !instructions.value || category.value === null) {
-        alert('Uzupełnij wszystkie pola!');
-        return;
+      if (
+        !title.value ||
+        !description.value ||
+        !ingredients.value ||
+        !instructions.value ||
+        category.value === null
+      ) {
+        await presentToast('Uzupełnij wszystkie pola!', 'warning');
+        return
       }
 
-      const formData = new FormData();
-      formData.append('title', title.value);
-      formData.append('description', description.value);
-      formData.append('ingredients', ingredients.value);
-      formData.append('instructions', instructions.value);
-      formData.append('category', category.value.toString());
+      const formData = new FormData()
+      formData.append('title', title.value)
+      formData.append('description', description.value)
+      formData.append('ingredients', ingredients.value)
+      formData.append('instructions', instructions.value)
+      formData.append('category', category.value.toString())
       if (image.value) {
-        formData.append('image', image.value);
+        formData.append('image', image.value)
       }
 
-      await recipeStore.addRecipe(formData);
+      await recipeStore.addRecipe(formData)
 
-      alert('Przepis dodany!');
-      title.value = '';
-      description.value = '';
-      ingredients.value = '';
-      instructions.value = '';
-      category.value = null;
-      image.value = null;
+      await presentToast('Przepis dodany!', 'success');
+      title.value = ''
+      description.value = ''
+      ingredients.value = ''
+      instructions.value = ''
+      category.value = null
+      image.value = null
       ionRouter.back()
-    };
+    }
 
     onMounted(() => {
-      categoryStore.fetchCategories();
-    });
+      categoryStore.fetchCategories()
+    })
 
     return {
       title,
@@ -141,7 +215,9 @@ export default defineComponent({
       categories,
       handleImageUpload,
       addRecipe,
-    };
+      removeNewImage,
+      imagePreview
+    }
   },
-});
+})
 </script>

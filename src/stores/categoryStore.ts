@@ -11,9 +11,20 @@ export const useCategoryStore = defineStore('category', {
       const response = await apiClient.get('/categories/');
       this.categories = response.data;
     },
-
     async addCategory(name: string, image: File | null ) {
-      await apiClient.post('/categories/', { name, image });
+      const formData = new FormData();
+      formData.append('name', name);
+      if (image) {
+        formData.append('image', image);
+      }
+
+      await apiClient.post('/categories/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      await this.fetchCategories(); // Dodaj, jeśli chcesz od razu zaktualizować listę
     },
 
     async deleteCategory(categoryId: number) {

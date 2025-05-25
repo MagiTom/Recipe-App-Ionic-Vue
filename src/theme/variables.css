@@ -1,3 +1,4 @@
+
 :root {
   --ion-color-primary: #70B9BE;
   --ion-color-primary-rgb: 112,185,190;
@@ -62,4 +63,36 @@
   --ion-color-dark-shade: #042123;
   --ion-color-dark-tint: #1d3c3e;
 
+}
+
+ion-card {
+  border-radius: 16px;
+  box-shadow: rgba(14, 63, 126, 0.04) 0px 0px 0px 1px, rgba(42, 51, 69, 0.04) 0px 1px 1px -0.5px, rgba(42, 51, 70, 0.04) 0px 3px 3px -1.5px, rgba(42, 51, 70, 0.04) 0px 6px 6px -3px, rgba(14, 63, 126, 0.04) 0px 12px 12px -6px, rgba(14, 63, 126, 0.04) 0px 24px 24px -12px;
+}
+ion-card img{
+  border-radius: 16px;
+}
+ion-thumbnail {
+  --border-radius: 16px;
+}
+
+ion-alert {
+  .alert-title,
+  .alert-sub-title {
+    text-align: center;
+  }
+
+  .alert-message {
+    text-align: center;
+  }
+
+  .alert-button {
+    font-weight: 600;
+    font-size: 2rem;
+    color: var(--ion-color-primary);
+  }
+
+  .alert-button.alert-button-role-cancel {
+    color: var(--ion-color-danger);
+  }
 }

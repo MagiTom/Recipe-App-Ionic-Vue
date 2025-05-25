@@ -1,41 +1,63 @@
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Przepis</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content>
-      <ion-card v-if="recipe">
-        <ion-card-header>
-          <img alt="recipe image" :src="recipe.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"/>
-          <ion-card-title>{{ recipe.title }}</ion-card-title>
-        </ion-card-header>
-        <ion-card-content>
-          <p><strong>Opis:</strong> {{ recipe.description }}</p>
-
-          <div v-if="ingredientsList.length">
-            <strong>Składniki:</strong>
-            <ul>
-              <li v-for="(ingredient, index) in ingredientsList" :key="index">
-                {{ ingredient }}
-              </li>
-            </ul>
+    <ion-content :fullscreen="true">
+      <div v-if="recipe" class="recipe">
+        <div class="recipe__image-wrapper">
+          <div class="recipe__actions">
+            <ion-button @click="editRecipe(recipe.id)" color="secondary" class="recipe__action" shape="round">
+              <ion-icon slot="icon-only" :icon="createOutline()"></ion-icon>
+            </ion-button>
+            <ion-button @click="deleteRecipe(recipe.id)" color="secondary" class="recipe__action" shape="round">
+              <ion-icon slot="icon-only" :icon="trashOutline()"></ion-icon>
+            </ion-button>
           </div>
+          <img
+            class="recipe__image"
+            :src="recipe.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"
+            alt="recipe image"
+          />
+        </div>
 
-          <div v-if="recipe.instructions">
-            <strong>Instrukcje:</strong>
-            <p>{{ recipe.instructions }}</p>
-          </div>
-        </ion-card-content>
-      </ion-card>
-
-      <ion-card v-else>
-        <ion-card-content class="ion-text-center">
+        <div class="recipe__content">
+          <ion-grid>
+            <ion-row>
+              <ion-col size="12">
+                <h3 class="recipe__title">{{ recipe.title }}</h3>
+              </ion-col>
+              <ion-col size="12">
+                <div class="recipe__web">
+                <ion-badge color="secondary">
+                  <ion-icon size="large" :icon="globeOutline()" />
+                </ion-badge>
+                <h4 class="recipe__subtitle">Strona</h4>
+                </div>
+                  <p class="recipe__description">{{ recipe.description }}</p>
+              </ion-col>
+              <ion-col size="12">
+                <div v-if="ingredientsList.length">
+                  <h4 class="recipe__subtitle">Składniki</h4>
+                  <p class="recipe__description">{{ingredientsList.length}} elementów</p>
+                  <div class="recipe__ingredients">
+                    <ion-badge color="secondary" v-for="(ingredient, index) in ingredientsList" :key="index">  {{ ingredient }}</ion-badge>
+                  </div>
+                </div>
+              </ion-col>
+              <ion-col size="12">
+                <div v-if="recipe.instructions">
+                  <h4 class="recipe__subtitle">Instrukcje</h4>
+                  <p class="recipe__description">{{ recipe.instructions }}</p>
+                </div>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </div>
+      </div>
+      <div v-else>
+        <div class="ion-text-center">
           <ion-spinner name="dots"></ion-spinner>
           <p>Ładowanie przepisu...</p>
-        </ion-card-content>
-      </ion-card>
+        </div>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -43,34 +65,40 @@
 <script lang="ts">
 import { useRecipeStore } from '@/stores/recipeStore'
 import {
-  IonCard,
-  IonCardContent,
-  IonCardHeader,
-  IonCardTitle,
+  alertController,
+  IonButton,
+  IonCol,
   IonContent,
-  IonHeader,
+  IonGrid,
   IonPage,
+  IonRow,
   IonSpinner,
-  IonThumbnail,
-  IonTitle,
-  IonToolbar,
+  useIonRouter,
 } from '@ionic/vue'
 import { computed, defineComponent, watch } from 'vue'
+import { createOutline, globeOutline, trashOutline } from 'ionicons/icons'
 
 export default defineComponent({
   name: 'RecipeDetails',
+  methods: {
+    globeOutline() {
+      return globeOutline
+    },
+    trashOutline() {
+      return trashOutline
+    },
+    createOutline() {
+      return createOutline
+    }
+  },
   components: {
+    IonButton,
     IonPage,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
     IonContent,
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardContent,
+    IonGrid,
+    IonRow,
+    IonCol,
     IonSpinner,
-    IonThumbnail,
   },
   props: {
     id: {
@@ -80,27 +108,119 @@ export default defineComponent({
   },
   setup(props) {
     const recipeStore = useRecipeStore()
+    const router = useIonRouter()
 
     watch(
-      () => props,
+      () => props.id,
       (newId) => {
         if (newId) {
-          recipeStore.fetchRecipeDetails(Number(newId.id))
+          recipeStore.fetchRecipeDetails(Number(newId))
         }
       },
-      { immediate: true },
+      { immediate: true }
     )
 
     const recipe = computed(() => recipeStore.recipeDetails)
+
     const ingredientsList = computed(() => {
       if (!recipe.value || typeof recipe.value.ingredients !== 'string') return []
       return recipe.value.ingredients.split(',').map((item) => item.trim())
     })
 
+    const deleteRecipe = async (recipeId: number) => {
+      const alert = await alertController.create({
+        header: 'Potwierdzenie',
+        message: 'Czy na pewno chcesz usunąć ten przepis?',
+        buttons: [
+          {
+            text: 'Anuluj',
+            role: 'cancel',
+          },
+          {
+            text: 'Usuń',
+            role: 'confirm',
+            handler: async () => {
+              await recipeStore.deleteRecipe(recipeId)
+              router.back()
+            },
+          },
+        ],
+      })
+      await alert.present()
+    }
+
+    const editRecipe = (recipeId: number) => {
+      router.push(`/edit-recipe/${recipeId}`)
+    }
+
     return {
       recipe,
       ingredientsList,
+      deleteRecipe,
+      editRecipe,
     }
   },
 })
 </script>
+
+<style scoped lang="scss">
+.recipe{
+  &__image-wrapper {
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &__actions{
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  &__web{
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  &__content {
+    background: white;
+    border-top-left-radius: 30px;
+    border-top-right-radius: 30px;
+    margin-top: -40px;
+    padding: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__title {
+    font-weight: bold;
+    margin-top: 0;
+  }
+  &__subtitle{
+    font-weight: bold;
+  }
+  &__description{
+    margin-block: .5rem;
+    color: var(--ion-color-medium);
+  }
+
+  &__ingredients{
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+}
+
+</style>

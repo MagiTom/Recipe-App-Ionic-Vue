@@ -10,29 +10,38 @@
     <ion-content class="ion-padding">
       <ion-button expand="block" @click="showModal = true">Zarządzaj kategoriami</ion-button>
       <ion-list>
-        <ion-item button @click="goToCategory(null)">
-          <ion-thumbnail slot="start">
-            <img
-              alt="Silhouette of mountains"
-              src="https://ionicframework.com/docs/img/demos/thumbnail.svg"
-            />
-          </ion-thumbnail>
-          <ion-label>Wszystkie przepisy</ion-label>
-        </ion-item>
-        <ion-item
-          @click="goToCategory(category.id)"
+        <ion-card button @click="goToCategory(null)">
+          <ion-card-header>
+            <div class="card-header">
+              <ion-thumbnail>
+                <img
+                  alt="Silhouette of mountains"
+                  src="https://ionicframework.com/docs/img/demos/thumbnail.svg"
+                />
+              </ion-thumbnail>
+              <h2>Wszystkie przepisy</h2>
+            </div>
+          </ion-card-header>
+        </ion-card>
+
+        <ion-card
           v-for="category in categoryStore.categories"
           :key="category.id"
           button
+          @click="goToCategory(category.id)"
         >
-          <ion-thumbnail slot="start">
-            <img
-              alt="Category image"
-              :src="category.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"
-            />
-          </ion-thumbnail>
-          <ion-label>{{ category.name }}</ion-label>
-        </ion-item>
+          <ion-card-header>
+            <div class="card-header">
+              <ion-thumbnail>
+                <img
+                  alt="Category image"
+                  :src="category.image || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"
+                />
+              </ion-thumbnail>
+              <h2>{{ category.name }}</h2>
+            </div>
+          </ion-card-header>
+        </ion-card>
       </ion-list>
 
       <!-- MODAL -->
@@ -49,13 +58,42 @@
         <ion-content class="ion-padding">
           <!-- Add New Category -->
           <ion-item>
-            <ion-label position="floating">Nowa kategoria</ion-label>
-            <ion-input v-model="newCategoryName" clear-input></ion-input>
+            <ion-input label-placement="floating" label="Nowa kategoria" v-model="newCategoryName" clear-input></ion-input>
           </ion-item>
+
           <ion-item>
             <ion-label>Dodaj obrazek</ion-label>
-            <input type="file" accept="image/*" @change="handleImageUpload($event, 'new')" />
+            <input
+              ref="fileInput"
+              type="file"
+              accept="image/*"
+              hidden
+              @change="handleImageUpload($event, 'new')"
+            />
+            <ion-button
+              disable="imagePreview"
+              color="danger"
+              fill="outline"
+              size="large"
+              @click="removeNewImage"
+            >
+              <ion-icon slot="icon-only" :icon="trashOutline()"></ion-icon>
+            </ion-button>
+            <ion-button fill="outline" size="large" @click="$refs.fileInput.click()">
+              <ion-icon slot="icon-only" :icon="add()"></ion-icon>
+            </ion-button>
           </ion-item>
+
+          <ion-item>
+            <ion-label>Podgląd</ion-label>
+            <ion-thumbnail slot="end" @click="$refs.fileInput.click()">
+              <img
+                :src="imagePreview || 'https://ionicframework.com/docs/img/demos/thumbnail.svg'"
+                alt="Category image"
+              />
+            </ion-thumbnail>
+          </ion-item>
+
           <ion-button
             expand="block"
             class="ion-margin-top"
@@ -67,6 +105,9 @@
 
           <!-- List Categories -->
           <ion-list class="ion-margin-top">
+            <ion-item-divider>
+              <ion-label>Lista</ion-label>
+            </ion-item-divider>
             <ion-item v-for="category in categoryStore.categories" :key="category.id">
               <ion-thumbnail slot="start">
                 <img
@@ -75,8 +116,8 @@
                 />
               </ion-thumbnail>
               <span style="flex-grow: 1">{{ category.name }}</span>
-              <ion-button size="small" @click="editCategory(category)"> Edytuj </ion-button>
-              <ion-button color="danger" size="small" @click.stop="deleteCategory(category.id)">
+              <ion-button strong fill="clear" size="small" @click="editCategory(category)"> Edytuj </ion-button>
+              <ion-button strong fill="clear" color="danger" size="small" @click.stop="deleteCategory(category)">
                 Usuń
               </ion-button>
             </ion-item>
@@ -95,8 +136,7 @@
 
             <ion-content class="ion-padding">
               <ion-item>
-                <ion-label position="floating">Nazwa kategorii</ion-label>
-                <ion-input v-model="editCategoryData.name" clear-input></ion-input>
+                  <ion-input label-placement="floating" label="Nazwa kategoriii" v-model="editCategoryData.name" clear-input></ion-input>
               </ion-item>
 
               <ion-item>
@@ -111,19 +151,21 @@
 
               <ion-item>
                 <ion-label>Zmień obrazek</ion-label>
-                <input type="file" accept="image/*" @change="handleImageUpload($event, 'edit')" />
+                <input
+                  ref="fileInput"
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  @change="handleImageUpload($event, 'edit')"
+                />
+
+                <ion-button fill="outline" size="large" @click="$refs.fileInput.click()">
+                  <ion-icon slot="icon-only" :icon="createOutline()"></ion-icon>
+                </ion-button>
+                <ion-button color="danger" disable="editCategoryData.image" fill="outline" size="large" @click="removeImage">
+                  <ion-icon slot="icon-only" :icon="trashOutline()"></ion-icon>
+                </ion-button>
               </ion-item>
-
-              <ion-button
-                v-if="editCategoryData.image"
-                color="danger"
-                expand="block"
-                class="ion-margin-top"
-                @click="removeImage"
-              >
-                Usuń obrazek
-              </ion-button>
-
               <ion-button expand="block" class="ion-margin-top" @click="updateCategory">
                 Zapisz zmiany
               </ion-button>
@@ -136,75 +178,66 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, inject, onBeforeUnmount, onMounted, type Ref, ref } from 'vue'
+import { defineComponent, ref, onMounted } from 'vue'
 import {
-  IonModal,
-  IonThumbnail,
-  onIonViewDidLeave,
-  onIonViewWillEnter,
-  onIonViewWillLeave,
-  useIonRouter
-} from '@ionic/vue'
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButton,
-  IonButtons,
-  IonList,
-  IonItem,
-  IonLabel,
-  IonInput,
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
+  IonButton, IonList, IonItem, IonLabel, IonInput, IonModal,
+  IonButtons, IonThumbnail, IonIcon, alertController, IonItemDivider
 } from '@ionic/vue'
 import { useMainStore } from '../store'
 import { useCategoryStore } from '../stores/categoryStore'
 import { useAuthStore } from '@/stores/authStore.ts'
-import { useUiStore } from '@/stores/uiStore.ts'
+import { useIonRouter } from '@ionic/vue'
+import { add, createOutline, removeOutline, trashOutline } from 'ionicons/icons'
+import { useToast } from '@/composables/useToast.ts'
 
 export default defineComponent({
   name: 'Home',
+  methods: {
+    trashOutline() {
+      return trashOutline
+    },
+    removeOutline() {
+      return removeOutline
+    },
+    createOutline() {
+      return createOutline
+    },
+    add() {
+      return add
+    }
+  },
   components: {
-    IonPage,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
-    IonButton,
-    IonList,
-    IonItem,
-    IonLabel,
-    IonInput,
-    IonModal,
-    IonButtons,
-    IonThumbnail,
+    IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
+    IonButton, IonList, IonItem, IonLabel, IonInput,
+    IonModal, IonButtons, IonThumbnail, IonIcon
   },
   setup() {
+    const { presentToast } = useToast();
     const mainStore = useMainStore()
     const authStore = useAuthStore()
     const categoryStore = useCategoryStore()
     const router = useIonRouter()
+
     const newCategoryName = ref('')
     const newCategoryImage = ref<File | null>(null)
+    const imagePreview = ref<string | null>(null)
     const loading = ref(false)
     const showModal = ref(false)
+
     const editModalVisible = ref(false)
     const editCategoryData = ref({ id: null, name: '', image: null })
     const editCategoryImagePreview = ref<string | null>(null)
+    const fileInput = ref<HTMLInputElement | null>(null)
 
     onMounted(() => {
       categoryStore.fetchCategories()
-    });
+    })
 
     const logout = () => {
-      authStore.logout();
-      mainStore.clearUser();
-      router.push('/login');
-    };
-
-    const goToCategory = (categoryId: number | null) => {
-      router.push(`/category/${categoryId}`)
+      authStore.logout()
+      mainStore.clearUser()
+      router.push('/login')
     }
 
     const handleImageUpload = (event: Event, type: 'new' | 'edit') => {
@@ -212,47 +245,62 @@ export default defineComponent({
 
       if (type === 'new') {
         newCategoryImage.value = file
-      } else {
-        // Store the file object for uploading
+
+        if (file && file.type.startsWith('image/')) {
+          const reader = new FileReader()
+          reader.onload = () => {
+            imagePreview.value = reader.result as string
+          }
+          reader.readAsDataURL(file)
+        } else {
+          imagePreview.value = null
+        }
+
+      } else if (type === 'edit') {
         editCategoryData.value.image = file
 
-        // Generate a preview URL for the selected file
         if (file) {
           if (editCategoryImagePreview.value) {
-            URL.revokeObjectURL(editCategoryImagePreview.value) // Revoke the old preview URL
+            URL.revokeObjectURL(editCategoryImagePreview.value)
           }
           editCategoryImagePreview.value = URL.createObjectURL(file)
         } else {
-          // Clear the preview if no file is selected
           editCategoryImagePreview.value = null
         }
       }
     }
 
+    const removeNewImage = () => {
+      newCategoryImage.value = null
+      imagePreview.value = null
+      if (fileInput.value) {
+        fileInput.value.value = ''
+      }
+    }
+
     const removeImage = () => {
-      // Revoke the preview URL to avoid memory leaks
       if (editCategoryImagePreview.value) {
         URL.revokeObjectURL(editCategoryImagePreview.value)
       }
-
-      editCategoryImagePreview.value = null // Clear the preview
-      editCategoryData.value.image = null // Clear the file object
+      editCategoryImagePreview.value = null
+      editCategoryData.value.image = null
     }
 
     const addCategory = async () => {
       if (!newCategoryName.value.trim()) {
-        alert('Podaj nazwę kategorii!')
+        await presentToast('Podaj nazwę kategorii!', 'warning');
         return
       }
       loading.value = true
       try {
         await categoryStore.addCategory(newCategoryName.value.trim(), newCategoryImage.value)
         await categoryStore.fetchCategories()
-        alert('Kategoria została dodana!')
+        await presentToast('Kategoria została dodana!', 'success');
         newCategoryName.value = ''
         newCategoryImage.value = null
+        imagePreview.value = null
       } catch (err: any) {
-        alert('Błąd dodawania kategorii: ' + (err.response?.data?.detail || err.message))
+        await presentToast('Błąd dodawania kategorii: ' + (err.response?.data?.details?.detail))
       } finally {
         loading.value = false
       }
@@ -265,19 +313,19 @@ export default defineComponent({
 
     const updateCategory = async () => {
       if (!editCategoryData.value.name.trim()) {
-        alert('Podaj nazwę kategorii!')
+        await presentToast('Podaj nazwę kategorii!', 'warning');
         return
       }
       try {
         await categoryStore.updateCategory(editCategoryData.value.id, {
           name: editCategoryData.value.name,
-          image: editCategoryData.value.image,
+          image: editCategoryData.value.image
         })
         await categoryStore.fetchCategories()
-        alert('Kategoria została zaktualizowana!')
+        await presentToast('Kategoria została zaktualizowana!', 'success');
         closeEditModal()
       } catch (err: any) {
-        alert('Błąd aktualizacji kategorii: ' + (err.response?.data?.detail || err.message))
+        await presentToast('Błąd aktualizacji kategorii: ' + (err.response?.data?.details?.detail), 'danger');
       }
     }
 
@@ -286,14 +334,35 @@ export default defineComponent({
       editCategoryData.value = { id: null, name: '', image: null }
     }
 
-    const deleteCategory = async (categoryId: number) => {
-      if (!confirm('Czy na pewno chcesz usunąć tę kategorię?')) return
-      try {
-        await categoryStore.deleteCategory(categoryId)
-        alert('Kategoria została usunięta!')
-      } catch (err: any) {
-        alert('Błąd usuwania kategorii: ' + (err.response?.data?.detail || err.message))
-      }
+    const deleteCategory = async (category: any) => {
+      const alertModal = await alertController.create({
+        header: 'Usuwanie',
+        subHeader: `Czy na pewno chcesz usunąć tę kategorię ${category.name}?`,
+        buttons: [
+          {
+            text: 'NIE',
+            role: 'cancel',
+          },
+          {
+            text: 'TAK',
+            role: 'confirm',
+            handler: async () => {
+              try {
+                await categoryStore.deleteCategory(category.id);
+                await presentToast('Kategoria została usunięta!', 'success');
+              } catch (err: any) {
+                await presentToast('Błąd usuwania kategorii: ' + (err.response?.data?.details?.detail), 'danger');
+              }
+            },
+          },
+        ],
+      });
+
+      await alertModal.present();
+    };
+
+    const goToCategory = (categoryId: number | null) => {
+      router.push(`/category/${categoryId}`)
     }
 
     return {
@@ -301,10 +370,12 @@ export default defineComponent({
       categoryStore,
       newCategoryName,
       newCategoryImage,
+      imagePreview,
       loading,
       showModal,
       editModalVisible,
       editCategoryData,
+      editCategoryImagePreview,
       logout,
       addCategory,
       editCategory,
@@ -314,8 +385,11 @@ export default defineComponent({
       handleImageUpload,
       removeImage,
       goToCategory,
+      removeNewImage,
+      fileInput,
+      IonItemDivider
     }
-  },
+  }
 })
 </script>
 
@@ -330,13 +404,26 @@ ion-modal {
   --height: 90%;
 }
 
-.add-category {
-  margin-bottom: 24px;
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
 }
 
 ion-thumbnail img {
   max-width: 100px;
   max-height: 100px;
   object-fit: cover;
+}
+
+.image-preview {
+  margin-top: 16px;
+  text-align: center;
+}
+.image-preview img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 </style>

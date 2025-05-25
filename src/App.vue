@@ -85,7 +85,7 @@ export default defineComponent({
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 /* Stylizacja dolnego paska narzędzi */
 ion-footer {
   position: fixed;
