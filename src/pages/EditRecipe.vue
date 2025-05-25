@@ -11,7 +11,7 @@
       </ion-item>
 
       <ion-item>
-        <ion-textarea auto-grow label-placement="floating" label="Opis" v-model="url"></ion-textarea>
+        <ion-textarea auto-grow label-placement="floating" label="Strona" v-model="url"></ion-textarea>
       </ion-item>
 
       <ion-item>
@@ -138,7 +138,7 @@ export default {
     const categoryStore = useCategoryStore()
     const ionRouter = useIonRouter()
     const title = ref('')
-    const description = ref('')
+    const url = ref('')
     const ingredients = ref('')
     const instructions = ref('')
     const category = ref<number | null>(null)

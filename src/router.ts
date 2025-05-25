@@ -1,13 +1,7 @@
-import { createRouter, createWebHistory } from '@ionic/vue-router';
-import type { RouteRecordRaw } from 'vue-router';
-import Home from './pages/Home.vue';
-import Login from './pages/Login.vue';
-import Register from './pages/Register.vue';
-import RecipeList from './pages/RecipeList.vue';
-import RecipeDetails from './pages/RecipeDetails.vue';
-import AddRecipe from './pages/AddRecipe.vue';
-import EditRecipe from './pages/EditRecipe.vue';
-import { authGuard } from './guards/authGuard';
+import { createRouter, createWebHistory } from '@ionic/vue-router'
+import type { RouteRecordRaw } from 'vue-router'
+import { authGuard } from './guards/authGuard'
+import Main from '@/pages/Main.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -15,52 +9,63 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/home',
   },
   {
-    path: '/home',
-    name: 'Home',
-    component: Home,
-    meta: { requiresAuth: true },
-  },
-  {
     path: '/login',
     name: 'Login',
-    component: Login,
+    component: () => import('./pages/Login.vue'),
   },
   {
     path: '/register',
     name: 'Register',
-    component: Register,
+    component: () => import('./pages/Register.vue'),
   },
   {
-    path: '/category/:id',
-    component: RecipeList,
-    props: true,
+    path: '/',
+    component: Main,
+    children: [
+      {
+        path: '/',
+        redirect: '/home',
+      },
+      {
+        path: 'home',
+        name: 'Home',
+        component: () => import('./pages/Home.vue'),
+        meta: { requiresAuth: true },
+      },
+
+      {
+        path: '/category/:id',
+        component: () => import('./pages/RecipeList.vue'),
+        props: true,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/recipe/:id',
+        component: () => import('./pages/RecipeDetails.vue'),
+        props: true,
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/add-recipe',
+        component: () => import('./pages/AddRecipe.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: '/edit-recipe/:id',
+        component: () => import('./pages/EditRecipe.vue'),
+        props: true,
+        meta: { requiresAuth: true },
+      },
+    ],
     meta: { requiresAuth: true },
   },
-  {
-    path: '/recipe/:id',
-    component: RecipeDetails,
-    props: true,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/add-recipe',
-    component: AddRecipe,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/edit-recipe/:id',
-    component: EditRecipe,
-    props: true,
-    meta: { requiresAuth: true },
-  }
-];
+]
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
-});
+})
 
+router.beforeEach(authGuard)
 
-router.beforeEach(authGuard);
-
-export default router;
+export default router

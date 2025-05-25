@@ -9,12 +9,29 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   actions: {
+    async fetchUser() {
+      if (!this.token) return;
+
+      try {
+        const response = await axios.get('http://localhost:8000/api/user/', {
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        });
+        this.user = response.data;
+      } catch (error) {
+        console.error('Błąd pobierania użytkownika:', error);
+      }
+    },
+
+
     async login(email: string, password: string) {
       const response = await axios.post('http://localhost:8000/api/login/', { email, password });
       this.token = response.data.access;
       this.refreshToken = response.data.refresh;
       localStorage.setItem('token', this.token);
       localStorage.setItem('refreshToken', this.refreshToken);
+      // await this.fetchUser();
     },
 
     async register(username: string, email: string, password: string) {
@@ -23,6 +40,7 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = response.data.refresh;
       localStorage.setItem('token', this.token);
       localStorage.setItem('refreshToken', this.refreshToken);
+      // await this.fetchUser();
     },
 
     logout() {

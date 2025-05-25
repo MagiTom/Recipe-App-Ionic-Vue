@@ -9,6 +9,7 @@ export const useRecipeStore = defineStore('recipe', {
       description: string
       category: number
       image: string | null
+      favourite: boolean
     }>,
     recipeDetails: null as {
       id: number
@@ -18,6 +19,7 @@ export const useRecipeStore = defineStore('recipe', {
       instructions: string
       category: number
       image: string | null
+      favourite: boolean
     } | null,
   }),
 
@@ -31,24 +33,60 @@ export const useRecipeStore = defineStore('recipe', {
       this.recipes = response.data
     },
 
-    async fetchPaginatedRecipes({ page = 1, title = '', category = null }: {
+    async toggleFavouriteRecipe(recipeId: number, favourite: boolean) {
+      try {
+        const response = await apiClient.patch(`/recipes/${recipeId}/`, { favourite })
+
+        const index = this.recipes.findIndex((r) => r.id === recipeId)
+        if (index !== -1) {
+          this.recipes[index].favourite = response.data.favourite
+        }
+
+        if (this.recipeDetails?.id === recipeId) {
+          this.recipeDetails.favourite = response.data.favourite
+        }
+
+        return response.data
+      } catch (error) {
+        console.error('Błąd podczas zmiany ulubionego przepisu:', error)
+      }
+    },
+
+    async fetchFavouriteRecipes() {
+      try {
+        const response = await apiClient.get('/recipes/?favourite=true')
+        this.recipes = response.data
+      } catch (error) {
+        console.error('Błąd podczas ładowania ulubionych przepisów:', error)
+      }
+    },
+
+    async fetchPaginatedRecipes({
+                                  page = 1,
+                                  title = '',
+                                  category = null,
+                                  onlyFavourites = false,
+                                }: {
       page: number
       title?: string
       category?: number | null
+      onlyFavourites?: boolean
     }) {
       try {
         const params = new URLSearchParams()
         params.append('page', page.toString())
         if (title) params.append('title', title)
         if (category !== null) params.append('category', category.toString())
+        if (onlyFavourites) params.append('favourite', 'true')
 
         const response = await apiClient.get(`/recipes/?${params.toString()}`)
-        return response.data // <-- tutaj spodziewamy się paginowanego obiektu { results, next, ... }
+        return response.data
       } catch (error) {
         console.error('Błąd podczas ładowania przepisów:', error)
         return { results: [], next: null }
       }
     },
+
 
     async fetchRecipeDetails(recipeId: number) {
       const response = await apiClient.get(`/recipes/${recipeId}/`)

@@ -1,25 +1,44 @@
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Przepisy</ion-title>
-      </ion-toolbar>
-    </ion-header>
-
     <ion-content :scroll-events="true" ref="contentRef">
-      <ion-searchbar
-        v-model="searchQuery"
-        placeholder="Szukaj po tytule"
-      />
-      <ion-loading :is-open="loading" message="Ładowanie przepisów..." spinner="crescent" />
 
       <ion-grid>
         <ion-row>
+          <ion-col class="header" size="12">
+            <p>Przepisy</p>
+          </ion-col>
+          <ion-col class="search" size="12">
+            <ion-searchbar
+              :debounce="500"
+              v-model="searchQuery"
+              @ionInput="handleInput($event)"
+              placeholder="Szukaj po tytule"
+            />
+            <ion-loading :is-open="loading" message="Ładowanie przepisów..." spinner="crescent" />
+            <ion-button
+              class="favourite-btn"
+              fill="outline"
+              shape="round"
+              @click="toggleOnlyFavourites"
+            >
+              <ion-icon
+                :icon="onlyFavourites ? heart() : heartOutline()"
+                slot="start"
+              />
+              {{ onlyFavourites ? 'Pokaż wszystkie' : 'Pokaż tylko ulubione' }}
+            </ion-button>
+
+          </ion-col>
           <ion-col size="6" size-md="4" size-lg="3" v-for="recipe in recipes" :key="recipe.id">
             <ion-card @click="goToRecipe(recipe.id)">
               <ion-card-header>
-                <ion-button class="nextBtn" shape="round">
-                  <ion-icon slot="icon-only" :icon="arrowForwardOutline" />
+                <ion-button
+                  class="heartBtn"
+                  shape="round"
+                  fill="clear"
+                  @click.stop.prevent="toggleFavourite(recipe.id, recipe.favourite)"
+                >
+                  <ion-icon slot="icon-only" :icon="recipe.favourite ? heart() : heartOutline()" />
                 </ion-button>
                 <img
                   alt="recipe image"
@@ -36,15 +55,15 @@
         Brak przepisów w tej kategorii 😥
       </div>
 
-      <ion-button
-        class="add-button"
-        size="large"
-        router-link="/add-recipe"
-        shape="round"
-        v-if="!loading"
-      >
-        <ion-icon slot="icon-only" :icon="addIcon" />
-      </ion-button>
+      <ion-fab>
+        <ion-fab-button class="add-button"
+                          size="large"
+                          router-link="/add-recipe"
+                          shape="round"
+                          v-if="!loading">
+          <ion-icon :icon="addIcon"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
 
       <ion-infinite-scroll @ionInfinite="handleInfinite" threshold="100px" :disabled="!hasMore">
         <ion-infinite-scroll-content loading-spinner="dots" loading-text="Ładowanie..." />
@@ -75,16 +94,27 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonSearchbar,
-  IonIcon,
+  IonIcon, IonFabButton, IonFab
 } from '@ionic/vue'
 import { defineComponent, ref, watch, onMounted } from 'vue'
 import { useRecipeStore } from '../stores/recipeStore'
-import { add, arrowForwardOutline } from 'ionicons/icons'
+import { add, arrowBackOutline, arrowForwardOutline, heart, heartOutline } from 'ionicons/icons'
 import { getImageToShow } from '@/utilis/imageUtils.ts'
 
 export default defineComponent({
   name: 'RecipeList',
-  methods: { getImageToShow },
+  methods: {
+    heartOutline() {
+      return heartOutline
+    },
+    heart() {
+      return heart
+    },
+    arrowBackOutline() {
+      return arrowBackOutline
+    }, getImageToShow,
+
+  },
   components: {
     IonLoading,
     IonPage,
@@ -106,6 +136,8 @@ export default defineComponent({
     IonInfiniteScrollContent,
     IonSearchbar,
     IonIcon,
+    IonFabButton,
+    IonFab
   },
   props: {
     id: {
@@ -124,7 +156,17 @@ export default defineComponent({
     const recipes = ref([])
     const contentRef = ref<HTMLElement | null>(null)
 
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null
+    const onlyFavourites = ref(false)
+
+    const toggleOnlyFavourites = async () => {
+      onlyFavourites.value = !onlyFavourites.value
+      await loadRecipes(true)
+    }
+
+    const handleInput = async (event: any) => {
+      // const query = event.target.value.toLowerCase();
+      await loadRecipes(true)
+    }
 
     const loadRecipes = async (reset = false) => {
       if (loading.value) return
@@ -140,6 +182,7 @@ export default defineComponent({
         page: nextPage.value,
         title: searchQuery.value,
         category: categoryId.value,
+        onlyFavourites: onlyFavourites.value,
       })
 
       if (response?.results?.length) {
@@ -161,12 +204,14 @@ export default defineComponent({
       ;(event.target as HTMLIonInfiniteScrollElement).complete()
     }
 
-    watch(searchQuery, () => {
-      if (debounceTimer) clearTimeout(debounceTimer)
-      debounceTimer = setTimeout(async () => {
-        await loadRecipes(true)
-      }, 500)
-    })
+    const toggleFavourite = async (recipeId: number, current: boolean) => {
+      await recipeStore.toggleFavouriteRecipe(recipeId, !current)
+      // Odśwież lokalny stan (jeśli trzymasz `recipes.value`)
+      const recipe = recipes.value.find((r) => r.id === recipeId)
+      if (recipe) {
+        recipe.favourite = !current
+      }
+    }
 
     watch(
       () => props.id,
@@ -182,6 +227,7 @@ export default defineComponent({
     const goToRecipe = (id: number) => router.push(`/recipe/${id}`)
 
     return {
+      handleInput,
       recipes,
       loading,
       goToRecipe,
@@ -190,13 +236,42 @@ export default defineComponent({
       hasMore,
       contentRef,
       arrowForwardOutline,
+      toggleFavourite,
       addIcon: add,
+      toggleOnlyFavourites,
+      onlyFavourites,
+      IonFabButton,
+      IonFab
     }
   },
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+
+.search{
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  align-items: center;
+}
+
+.header{
+  margin: 2rem 0 1rem 0;
+  p{
+    font-weight: bolder;
+    font-size: 1.5rem;
+    text-align: center;
+    margin: 0 auto;
+  }
+}
+
+ion-searchbar{
+  --box-shadow: 0;
+  border: 1px solid var(--ion-color-light);
+  border-radius: 16px;
+}
+
 ion-card {
   cursor: pointer;
   transition: transform 0.2s ease;
@@ -208,7 +283,7 @@ ion-card-title {
   margin-top: 1rem;
 }
 
-ion-card-header .nextBtn {
+ion-card-header .heartBtn {
   position: absolute;
   right: 15px;
   top: 15px;
@@ -229,7 +304,7 @@ ion-card:hover {
 .add-button {
   position: fixed;
   right: 1rem;
-  bottom: 4rem;
+  bottom: 1rem;
 }
 
 .empty-message {

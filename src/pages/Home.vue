@@ -1,14 +1,16 @@
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Wybierz kategorię</ion-title>
-        <ion-button @click="logout" slot="end">Wyloguj</ion-button>
-      </ion-toolbar>
-    </ion-header>
 
     <ion-content class="ion-padding">
-      <ion-button expand="block" @click="showModal = true">Zarządzaj kategoriami</ion-button>
+      <p class="greeting">
+        <ion-text color="primary"><ion-icon size="large" :icon="sunnyOutline()"></ion-icon></ion-text>
+         Dzień Dobry
+      </p>
+      <p class="user">{{ authStore.user?.username || 'Użytkownik' }}</p>
+
+
+      <p class="category">Wybierz kategorię</p>
+
       <ion-list>
         <ion-card button @click="goToCategory(null)">
           <ion-card-header>
@@ -58,7 +60,12 @@
         <ion-content class="ion-padding">
           <!-- Add New Category -->
           <ion-item>
-            <ion-input label-placement="floating" label="Nowa kategoria" v-model="newCategoryName" clear-input></ion-input>
+            <ion-input
+              label-placement="floating"
+              label="Nowa kategoria"
+              v-model="newCategoryName"
+              clear-input
+            ></ion-input>
           </ion-item>
 
           <ion-item>
@@ -116,8 +123,16 @@
                 />
               </ion-thumbnail>
               <span style="flex-grow: 1">{{ category.name }}</span>
-              <ion-button strong fill="clear" size="small" @click="editCategory(category)"> Edytuj </ion-button>
-              <ion-button strong fill="clear" color="danger" size="small" @click.stop="deleteCategory(category)">
+              <ion-button strong fill="clear" size="small" @click="editCategory(category)">
+                Edytuj
+              </ion-button>
+              <ion-button
+                strong
+                fill="clear"
+                color="danger"
+                size="small"
+                @click.stop="deleteCategory(category)"
+              >
                 Usuń
               </ion-button>
             </ion-item>
@@ -136,7 +151,12 @@
 
             <ion-content class="ion-padding">
               <ion-item>
-                  <ion-input label-placement="floating" label="Nazwa kategoriii" v-model="editCategoryData.name" clear-input></ion-input>
+                <ion-input
+                  label-placement="floating"
+                  label="Nazwa kategoriii"
+                  v-model="editCategoryData.name"
+                  clear-input
+                ></ion-input>
               </ion-item>
 
               <ion-item>
@@ -162,7 +182,13 @@
                 <ion-button fill="outline" size="large" @click="$refs.fileInput.click()">
                   <ion-icon slot="icon-only" :icon="createOutline()"></ion-icon>
                 </ion-button>
-                <ion-button color="danger" disable="editCategoryData.image" fill="outline" size="large" @click="removeImage">
+                <ion-button
+                  color="danger"
+                  disable="editCategoryData.image"
+                  fill="outline"
+                  size="large"
+                  @click="removeImage"
+                >
                   <ion-icon slot="icon-only" :icon="trashOutline()"></ion-icon>
                 </ion-button>
               </ion-item>
@@ -173,6 +199,17 @@
           </ion-modal>
         </ion-content>
       </ion-modal>
+      <ion-fab>
+        <ion-fab-button
+          @click="showModal = true"
+          class="add-button"
+          size="large"
+          shape="round"
+          v-if="!loading"
+        >
+          <ion-icon :icon="createOutline()"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
     </ion-content>
   </ion-page>
 </template>
@@ -180,20 +217,37 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from 'vue'
 import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
-  IonButton, IonList, IonItem, IonLabel, IonInput, IonModal,
-  IonButtons, IonThumbnail, IonIcon, alertController, IonItemDivider
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButton,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonInput,
+  IonModal,
+  IonButtons,
+  IonThumbnail,
+  IonIcon,
+  alertController,
+  IonItemDivider,
+  IonCol, onIonViewWillEnter, IonFabButton, IonFab
 } from '@ionic/vue'
 import { useMainStore } from '../store'
 import { useCategoryStore } from '../stores/categoryStore'
 import { useAuthStore } from '@/stores/authStore.ts'
 import { useIonRouter } from '@ionic/vue'
-import { add, createOutline, removeOutline, trashOutline } from 'ionicons/icons'
+import { add, createOutline, removeOutline, sunnyOutline, trashOutline } from 'ionicons/icons'
 import { useToast } from '@/composables/useToast.ts'
 
 export default defineComponent({
   name: 'Home',
   methods: {
+    sunnyOutline() {
+      return sunnyOutline
+    },
     trashOutline() {
       return trashOutline
     },
@@ -205,19 +259,33 @@ export default defineComponent({
     },
     add() {
       return add
-    }
+    },
   },
   components: {
-    IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
-    IonButton, IonList, IonItem, IonLabel, IonInput,
-    IonModal, IonButtons, IonThumbnail, IonIcon
+    IonCol,
+    IonPage,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonButton,
+    IonList,
+    IonItem,
+    IonLabel,
+    IonInput,
+    IonModal,
+    IonButtons,
+    IonThumbnail,
+    IonIcon,
+    IonFabButton,
+    IonFab
   },
   setup() {
-    const { presentToast } = useToast();
+    const { presentToast } = useToast()
     const mainStore = useMainStore()
-    const authStore = useAuthStore()
     const categoryStore = useCategoryStore()
     const router = useIonRouter()
+    const authStore = useAuthStore()
 
     const newCategoryName = ref('')
     const newCategoryImage = ref<File | null>(null)
@@ -230,15 +298,10 @@ export default defineComponent({
     const editCategoryImagePreview = ref<string | null>(null)
     const fileInput = ref<HTMLInputElement | null>(null)
 
-    onMounted(() => {
+    onIonViewWillEnter(() => {
       categoryStore.fetchCategories()
+      authStore.fetchUser()
     })
-
-    const logout = () => {
-      authStore.logout()
-      mainStore.clearUser()
-      router.push('/login')
-    }
 
     const handleImageUpload = (event: Event, type: 'new' | 'edit') => {
       const file = (event.target as HTMLInputElement).files?.[0] || null
@@ -255,7 +318,6 @@ export default defineComponent({
         } else {
           imagePreview.value = null
         }
-
       } else if (type === 'edit') {
         editCategoryData.value.image = file
 
@@ -288,19 +350,19 @@ export default defineComponent({
 
     const addCategory = async () => {
       if (!newCategoryName.value.trim()) {
-        await presentToast('Podaj nazwę kategorii!', 'warning');
+        await presentToast('Podaj nazwę kategorii!', 'warning')
         return
       }
       loading.value = true
       try {
         await categoryStore.addCategory(newCategoryName.value.trim(), newCategoryImage.value)
         await categoryStore.fetchCategories()
-        await presentToast('Kategoria została dodana!', 'success');
+        await presentToast('Kategoria została dodana!', 'success')
         newCategoryName.value = ''
         newCategoryImage.value = null
         imagePreview.value = null
       } catch (err: any) {
-        await presentToast('Błąd dodawania kategorii: ' + (err.response?.data?.details?.detail))
+        await presentToast('Błąd dodawania kategorii: ' + err.response?.data?.details?.detail)
       } finally {
         loading.value = false
       }
@@ -313,19 +375,22 @@ export default defineComponent({
 
     const updateCategory = async () => {
       if (!editCategoryData.value.name.trim()) {
-        await presentToast('Podaj nazwę kategorii!', 'warning');
+        await presentToast('Podaj nazwę kategorii!', 'warning')
         return
       }
       try {
         await categoryStore.updateCategory(editCategoryData.value.id, {
           name: editCategoryData.value.name,
-          image: editCategoryData.value.image
+          image: editCategoryData.value.image,
         })
         await categoryStore.fetchCategories()
-        await presentToast('Kategoria została zaktualizowana!', 'success');
+        await presentToast('Kategoria została zaktualizowana!', 'success')
         closeEditModal()
       } catch (err: any) {
-        await presentToast('Błąd aktualizacji kategorii: ' + (err.response?.data?.details?.detail), 'danger');
+        await presentToast(
+          'Błąd aktualizacji kategorii: ' + err.response?.data?.details?.detail,
+          'danger',
+        )
       }
     }
 
@@ -348,18 +413,21 @@ export default defineComponent({
             role: 'confirm',
             handler: async () => {
               try {
-                await categoryStore.deleteCategory(category.id);
-                await presentToast('Kategoria została usunięta!', 'success');
+                await categoryStore.deleteCategory(category.id)
+                await presentToast('Kategoria została usunięta!', 'success')
               } catch (err: any) {
-                await presentToast('Błąd usuwania kategorii: ' + (err.response?.data?.details?.detail), 'danger');
+                await presentToast(
+                  'Błąd usuwania kategorii: ' + err.response?.data?.details?.detail,
+                  'danger',
+                )
               }
             },
           },
         ],
-      });
+      })
 
-      await alertModal.present();
-    };
+      await alertModal.present()
+    }
 
     const goToCategory = (categoryId: number | null) => {
       router.push(`/category/${categoryId}`)
@@ -376,7 +444,6 @@ export default defineComponent({
       editModalVisible,
       editCategoryData,
       editCategoryImagePreview,
-      logout,
       addCategory,
       editCategory,
       updateCategory,
@@ -387,13 +454,29 @@ export default defineComponent({
       goToCategory,
       removeNewImage,
       fileInput,
-      IonItemDivider
+      IonItemDivider,
+      authStore,
     }
-  }
+  },
 })
 </script>
 
 <style scoped>
+.greeting{
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: 1rem 0 0 0;
+}
+.user{
+  margin: 0 0 0 .5rem;
+  font-size: 1.2rem;
+  font-weight: bolder;
+}
+.category{
+    font-weight: bolder;
+  margin: 2rem 0 0 0;
+}
 ion-item {
   --padding-start: 20px;
   --inner-padding-end: 20px;
@@ -425,5 +508,11 @@ ion-thumbnail img {
   max-height: 200px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.add-button {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
 }
 </style>

@@ -11,7 +11,7 @@
       </ion-item>
 
       <ion-item>
-        <ion-textarea auto-grow label-placement="floating" label="Opis" v-model="url"></ion-textarea>
+        <ion-textarea auto-grow label-placement="floating" label="Strona" v-model="url"></ion-textarea>
       </ion-item>
 
       <ion-item>
@@ -181,7 +181,7 @@ export default defineComponent({
 
       const formData = new FormData()
       formData.append('title', title.value)
-      formData.append('description', url.value)
+      formData.append('url', url.value)
       formData.append('ingredients', ingredients.value)
       formData.append('instructions', instructions.value)
       formData.append('category', category.value.toString())
