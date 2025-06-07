@@ -14,6 +14,7 @@ import '@ionic/vue/css/typography.css'
 
 /* Optional CSS utils */
 import '@ionic/vue/css/padding.css'
+import './assets/base.scss';
 import '@ionic/vue/css/float-elements.css'
 import '@ionic/vue/css/text-alignment.css'
 import '@ionic/vue/css/text-transformation.css'
@@ -25,6 +26,9 @@ import { useAuthStore } from './stores/authStore'
 
 /* Theme variables */
 import './theme/variables.css'
+
+import { defineCustomElements } from '@ionic/pwa-elements/loader';
+defineCustomElements(window);
 
 addIcons({
   'arrow-back': arrowBack,

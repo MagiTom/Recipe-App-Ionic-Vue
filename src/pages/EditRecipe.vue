@@ -41,29 +41,10 @@
         </ion-select>
       </ion-item>
 
-      <ion-item>
-        <ion-label>Podgląd obrazka</ion-label>
-        <ion-thumbnail>
-          <img :src="image || placeholder" alt="image" />
-        </ion-thumbnail>
-      </ion-item>
-
-      <ion-item>
-        <ion-label>Zmień obrazek</ion-label>
-        <input ref="fileInput" type="file" accept="image/*" hidden @change="handleImageUpload" />
-        <ion-button fill="outline" size="large" @click="triggerFileInput">
-          <ion-icon :icon="createOutlineIcon" />
-        </ion-button>
-        <ion-button
-          color="danger"
-          fill="outline"
-          size="large"
-          @click="removeImage"
-          :disabled="!image"
-        >
-          <ion-icon :icon="trashOutlineIcon" />
-        </ion-button>
-      </ion-item>
+      <ImagePicker
+        :initialImage="typeof image === 'string' ? image : null"
+        @update:image="onImageSelected"
+      />
 
       <ion-button expand="block" @click="saveRecipe">Zapisz</ion-button>
     </ion-content>
@@ -71,28 +52,26 @@
 </template>
 
 <script lang="ts">
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonTextarea,
-  IonSelect,
-  IonSelectOption,
-  IonButton,
-  IonThumbnail,
-  IonIcon,
-  useIonRouter,
-} from '@ionic/vue'
-import { defineComponent, ref, onMounted } from 'vue'
-import { createOutline, trashOutline } from 'ionicons/icons'
+import { useToast } from '@/composables/useToast'
 import { useCategoryStore } from '@/stores/categoryStore'
 import { useRecipeStore } from '@/stores/recipeStore'
-import { useToast } from '@/composables/useToast'
+import {
+  IonButton,
+  IonContent,
+  IonHeader,
+  IonInput,
+  IonItem,
+  IonPage,
+  IonSelect,
+  IonSelectOption,
+  IonTextarea,
+  IonTitle,
+  IonToolbar,
+  useIonRouter,
+} from '@ionic/vue'
+import { createOutline, trashOutline } from 'ionicons/icons'
+import { defineComponent, onMounted, ref } from 'vue'
+import ImagePicker from '../components/ImagePicker.vue'
 
 export default defineComponent({
   name: 'EditRecipe',
@@ -103,14 +82,12 @@ export default defineComponent({
     IonTitle,
     IonContent,
     IonItem,
-    IonLabel,
     IonInput,
     IonTextarea,
     IonSelect,
     IonSelectOption,
     IonButton,
-    IonThumbnail,
-    IonIcon,
+    ImagePicker,
   },
   props: {
     id: {
@@ -153,13 +130,10 @@ export default defineComponent({
       categories.value = categoryStore.categories
     }
 
-    const handleImageUpload = (event: Event) => {
-      const file = (event.target as HTMLInputElement).files?.[0]
-      if (!file) return
-
+    const onImageSelected = (file: File | null) => {
       newImage.value = file
 
-      if (file.type.startsWith('image/')) {
+      if (file) {
         const reader = new FileReader()
         reader.onload = () => {
           image.value = reader.result as string
@@ -168,16 +142,6 @@ export default defineComponent({
       } else {
         image.value = null
       }
-    }
-
-    const triggerFileInput = () => {
-      fileInput.value?.click()
-    }
-
-    const removeImage = () => {
-      newImage.value = null
-      image.value = null
-      if (fileInput.value) fileInput.value.value = ''
     }
 
     const saveRecipe = async () => {
@@ -220,16 +184,22 @@ export default defineComponent({
       placeholder,
       createOutlineIcon,
       trashOutlineIcon,
-      handleImageUpload,
-      triggerFileInput,
-      removeImage,
       saveRecipe,
+      onImageSelected,
     }
   },
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import '@/assets/styles/media.scss';
+
+ion-content::part(scroll) {
+  @include media(lg) {
+    width: 50%;
+    margin: 4rem auto;
+  }
+}
 ion-item {
   margin-bottom: 16px;
 }

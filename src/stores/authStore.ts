@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import apiClient from '@/interceptors/errorInterceptor'
 
 interface User {
   id: number
@@ -52,7 +52,7 @@ export const useAuthStore = defineStore('auth', {
     async fetchUser() {
       if (!this.token) return
 
-      const { data } = await axios.get('http://localhost:8000/api/user/', {
+      const { data } = await apiClient.get('http://localhost:8000/api/user/', {
         headers: {
           Authorization: `Bearer ${this.token}`,
         },
@@ -62,17 +62,28 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async login(email: string, password: string) {
-      const { data } = await axios.post('http://localhost:8000/api/login/', { email, password })
-      this.setTokens(data.access, data.refresh)
+      try {
+        const { data } = await apiClient.post('http://localhost:8000/api/login/', {
+          email,
+          password,
+        })
+        this.setTokens(data.access, data.refresh)
+      } catch (err) {
+        console.error('Błąd zalogowania:', err)
+      }
     },
 
     async register(username: string, email: string, password: string) {
-      const { data } = await axios.post('http://localhost:8000/api/register/', {
-        username,
-        email,
-        password,
-      })
-      this.setTokens(data.access, data.refresh)
+      try {
+        const { data } = await apiClient.post('http://localhost:8000/api/register/', {
+          username,
+          email,
+          password,
+        })
+        this.setTokens(data.access, data.refresh)
+      } catch (err) {
+        console.error('Błąd rejestracji:', err)
+      }
     },
 
     async refreshAccessToken() {
@@ -81,7 +92,7 @@ export const useAuthStore = defineStore('auth', {
         return
       }
 
-      const { data } = await axios.post('http://localhost:8000/api/refresh/', {
+      const { data } = await apiClient.post('http://localhost:8000/api/refresh/', {
         refresh: this.refreshToken,
       })
 

@@ -8,20 +8,11 @@
 
     <ion-content>
       <ion-item>
-        <ion-input
-          label="Tytuł"
-          label-placement="floating"
-          v-model="title"
-        />
+        <ion-input label="Tytuł" label-placement="floating" v-model="title" />
       </ion-item>
 
       <ion-item>
-        <ion-textarea
-          auto-grow
-          label="Strona"
-          label-placement="floating"
-          v-model="url"
-        />
+        <ion-textarea auto-grow label="Strona" label-placement="floating" v-model="url" />
       </ion-item>
 
       <ion-item>
@@ -43,84 +34,58 @@
       </ion-item>
 
       <ion-item>
-        <ion-select
-          label="Kategoria"
-          label-placement="floating"
-          v-model="category"
-        >
-          <ion-select-option
-            v-for="cat in categories"
-            :key="cat.id"
-            :value="cat.id"
-          >
+        <ion-select label="Kategoria" label-placement="floating" v-model="category">
+          <ion-select-option v-for="cat in categories" :key="cat.id" :value="cat.id">
             {{ cat.name }}
           </ion-select-option>
         </ion-select>
       </ion-item>
 
-      <ion-item>
-        <ion-label>Dodaj obrazek</ion-label>
-        <input
-          ref="fileInput"
-          type="file"
-          accept="image/*"
-          hidden
-          @change="handleImageUpload"
-        />
-        <ion-button
-          :disabled="!imagePreview"
-          color="danger"
-          fill="outline"
-          size="large"
-          @click="removeNewImage"
-        >
-          <ion-icon :icon="trashOutline" />
-        </ion-button>
-        <ion-button
-          fill="outline"
-          size="large"
-          @click="$refs.fileInput?.click()"
-        >
-          <ion-icon :icon="addIcon" />
-        </ion-button>
-      </ion-item>
+      <ImagePicker @update:image="newImage = $event" />
 
-      <ion-item>
-        <ion-label>Podgląd</ion-label>
-        <ion-thumbnail @click="$refs.fileInput?.click()">
-          <img
-            :src="imagePreview || defaultThumbnail"
-            alt="Preview"
-          />
-        </ion-thumbnail>
-      </ion-item>
-
-      <ion-button expand="block" @click="addRecipe">
-        Dodaj Przepis
-      </ion-button>
+      <ion-button class="ion-padding" expand="block" @click="addRecipe"> Dodaj Przepis </ion-button>
     </ion-content>
   </ion-page>
 </template>
 
-
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from 'vue'
+import { useToast } from '@/composables/useToast.ts'
 import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem,
-  IonLabel, IonInput, IonTextarea, IonSelect, IonSelectOption,
-  IonButton, IonIcon, IonThumbnail, useIonRouter
+  IonButton,
+  IonContent,
+  IonHeader,
+  IonInput,
+  IonItem,
+  IonPage,
+  IonSelect,
+  IonSelectOption,
+  IonTextarea,
+  IonTitle,
+  IonToolbar,
+  useIonRouter
 } from '@ionic/vue'
 import { add, trashOutline } from 'ionicons/icons'
-import { useToast } from '@/composables/useToast.ts'
-import { useRecipeStore } from '../stores/recipeStore'
+import { computed, defineComponent, onMounted, ref } from 'vue'
 import { useCategoryStore } from '../stores/categoryStore'
+import { useRecipeStore } from '../stores/recipeStore'
+import ImagePicker from './../components/ImagePicker.vue'
+
 
 export default defineComponent({
   name: 'AddRecipe',
   components: {
-    IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
-    IonItem, IonLabel, IonInput, IonTextarea, IonSelect,
-    IonSelectOption, IonButton, IonIcon, IonThumbnail,
+    IonPage,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonItem,
+    IonInput,
+    IonTextarea,
+    IonSelect,
+    IonSelectOption,
+    IonButton,
+    ImagePicker
   },
   setup() {
     const title = ref('')
@@ -163,7 +128,13 @@ export default defineComponent({
     }
 
     const addRecipe = async () => {
-      if (!title.value || !url.value || !ingredients.value || !instructions.value || category.value === null) {
+      if (
+        !title.value ||
+        !url.value ||
+        !ingredients.value ||
+        !instructions.value ||
+        category.value === null
+      ) {
         await presentToast('Uzupełnij wszystkie pola!', 'warning')
         return
       }
@@ -208,8 +179,19 @@ export default defineComponent({
       addIcon: add,
       trashOutline,
       defaultThumbnail: 'https://ionicframework.com/docs/img/demos/thumbnail.svg',
+      newImage
     }
-  }
+  },
 })
 </script>
 
+<style scoped lang="scss">
+@import '@/assets/styles/media.scss';
+
+ion-content::part(scroll)  {
+  @include media(lg) {
+    width: 50%;
+    margin: 4rem auto;
+  }
+}
+</style>

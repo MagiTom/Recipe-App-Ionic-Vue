@@ -2,7 +2,7 @@
   <ion-page>
     <ion-tabs>
       <ion-router-outlet></ion-router-outlet>
-      <ion-tab-bar>
+      <ion-tab-bar slot="bottom">
         <ion-tab-button tab="back" @click="goBack">
           <ion-icon :icon="chevronBackOutline" />
           <ion-label>wstecz</ion-label>

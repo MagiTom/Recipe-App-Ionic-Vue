@@ -2,11 +2,11 @@
   <ion-page>
     <ion-content :scroll-events="true" ref="contentRef">
       <ion-grid>
-        <ion-row>
+        <ion-row class="ion-align-items-center">
           <ion-col class="header" size="12">
-            <p>Przepisy</p>
+            <p>{{ categoryName }}</p>
           </ion-col>
-          <ion-col class="search" size="12">
+          <ion-col class="search" size="12" size-md="6">
             <ion-searchbar
               :debounce="500"
               v-model="searchQuery"
@@ -14,17 +14,21 @@
               placeholder="Szukaj po tytule"
             />
             <ion-loading :is-open="loading" message="Ładowanie przepisów..." spinner="crescent" />
+          </ion-col>
+          <ion-col size="12" size-md="6">
             <ion-button
               class="favourite-btn"
               fill="outline"
               shape="round"
               @click="toggleOnlyFavourites"
             >
-              <ion-icon :icon="onlyFavourites ? heart() : heartOutline()" />
+              <ion-icon class="ion-margin-end" :icon="onlyFavourites ? heart() : heartOutline()" />
               {{ onlyFavourites ? 'Pokaż wszystkie' : 'Pokaż tylko ulubione' }}
             </ion-button>
           </ion-col>
-          <ion-col size="6" size-md="4" size-lg="3" v-for="recipe in recipes" :key="recipe.id">
+        </ion-row>
+        <ion-row>
+          <ion-col size="6" size-md="3" size-lg="2" v-for="recipe in recipes" :key="recipe.id">
             <ion-card @click="goToRecipe(recipe.id)">
               <ion-card-header>
                 <ion-button
@@ -33,7 +37,7 @@
                   shape="round"
                   fill="clear"
                 >
-                  <ion-icon :icon="recipe.favourite ? heart() : heartOutline()" />
+                  <ion-icon slot="icon-only" :icon="recipe.favourite ? heart() : heartOutline()" />
                 </ion-button>
                 <img alt="recipe image" :src="getImageToShow(recipe.image, recipe.url)" />
                 <ion-card-title>{{ recipe.title }}</ion-card-title>
@@ -84,6 +88,7 @@ import {
 import { add, arrowBackOutline, arrowForwardOutline, heart, heartOutline } from 'ionicons/icons'
 import { computed, defineComponent, ref, watch } from 'vue'
 import { useRecipeStore } from '../stores/recipeStore'
+import { useCategoryStore } from '@/stores/categoryStore'
 
 export default defineComponent({
   name: 'RecipeList',
@@ -125,6 +130,7 @@ export default defineComponent({
   },
   setup(props) {
     const recipeStore = useRecipeStore()
+    const categoryStore = useCategoryStore()
     const router = useIonRouter()
     const recipes = computed(() => recipeStore.recipes)
     const loading = computed(() => recipeStore.loading)
@@ -134,6 +140,15 @@ export default defineComponent({
     const contentRef = ref<HTMLElement | null>(null)
 
     const onlyFavourites = ref(false)
+
+    const categoryName = computed(() => {
+      return categoryStore.categories.find((cat) => cat.id === categoryId.value)?.name ?? 'Przepisy'
+    })
+
+    // Pobrane kategorie na starcie (jeśli jeszcze nie są)
+    if (categoryStore.categories.length === 0) {
+      categoryStore.fetchCategories()
+    }
 
     const toggleOnlyFavourites = async () => {
       onlyFavourites.value = !onlyFavourites.value
@@ -188,12 +203,14 @@ export default defineComponent({
       addIcon: add,
       toggleOnlyFavourites,
       onlyFavourites,
+      categoryName
     }
   },
 })
 </script>
 
 <style scoped lang="scss">
+@import '@/assets/styles/media.scss';
 .search {
   display: flex;
   flex-direction: column;
@@ -226,6 +243,7 @@ ion-card {
 ion-card-title {
   font-weight: bolder;
   font-size: 1.2rem;
+  margin: 1rem;
 }
 
 ion-card-header .heartBtn {
@@ -249,6 +267,9 @@ ion-card img {
   height: 97px;
   object-fit: cover;
   object-position: center;
+  @include media(lg) {
+    height: 150px;
+  }
 }
 
 ion-card:hover {
@@ -259,6 +280,9 @@ ion-card:hover {
   position: fixed;
   right: 1rem;
   bottom: 1rem;
+  @include media(md) {
+    right: 4rem;
+  }
 }
 
 .empty-message {

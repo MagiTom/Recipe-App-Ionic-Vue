@@ -31,8 +31,18 @@ export const useCategoryStore = defineStore('category', {
       await this.fetchCategories()
     },
 
-    async updateCategory(categoryId: number, { name, image }: { name: string; image: File | null | string }) {
+    async updateCategory(
+      categoryId: number,
+      { name, image }: { name: string; image: File | null | string },
+    ) {
+      console.log(image)
       const formData = this.buildFormData(name, image)
+      if (image instanceof File) {
+        formData.append('image', image)
+      } else if (image === null) {
+        formData.append('image', '')
+      }
+
       await apiClient.put(`/categories/${categoryId}/`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })

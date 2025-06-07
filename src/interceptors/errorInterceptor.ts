@@ -7,25 +7,14 @@ const apiClient = axios.create({
   baseURL: 'http://localhost:8000/api',
 })
 
-apiClient.interceptors.request.use(
-  (config) => {
-    const authStore = useAuthStore()
-    if (authStore.token) {
-      config.headers['Authorization'] = `Bearer ${authStore.token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  },
-)
-
 apiClient.interceptors.response.use(
   async (response) => {
     const method = response.config.method?.toUpperCase() || ''
 
     if (['POST', 'PUT', 'DELETE'].includes(method)) {
-      await presentToast(response.data.message, 'success')
+      if (response.data.message) {
+        await presentToast(response.data.message, 'success')
+      }
     }
 
     return response
@@ -46,10 +35,34 @@ apiClient.interceptors.response.use(
         return Promise.reject(refreshError)
       }
     }
-    await presentToast(error.response?.data?.detail || 'Coś poszło nie tak!', 'danger')
 
+    const responseData = error.response?.data
+    let message = 'Coś poszło nie tak!'
+
+    if (typeof responseData === 'string') {
+      message = responseData
+    } else if (responseData?.detail) {
+      message = responseData.detail
+    } else if (responseData?.details && typeof responseData.details === 'object') {
+      const fieldErrors = Object.entries(responseData.details)
+        .map(([field, errors]) => {
+          if (Array.isArray(errors)) {
+            return `${field}: ${errors.join(', ')}`
+          }
+          return `${field}: ${errors}`
+        })
+        .join('\n')
+
+      if (fieldErrors) {
+        message = fieldErrors
+      }
+    }
+
+    await presentToast(message, 'danger')
     return Promise.reject(error)
-  },
+  }
 )
+
+
 
 export default apiClient

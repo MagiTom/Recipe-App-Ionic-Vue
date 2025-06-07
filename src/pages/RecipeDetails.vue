@@ -10,7 +10,7 @@
               class="recipe__action"
               shape="round"
             >
-              <ion-icon :icon="createOutline()"></ion-icon>
+              <ion-icon slot="icon-only" :icon="createOutline()"></ion-icon>
             </ion-button>
             <ion-button
               @click="deleteRecipe(recipe.id)"
@@ -18,7 +18,7 @@
               class="recipe__action"
               shape="round"
             >
-              <ion-icon :icon="trashOutline()"></ion-icon>
+              <ion-icon slot="icon-only" :icon="trashOutline()"></ion-icon>
             </ion-button>
           </div>
           <img class="recipe__image" :src="imageToShow" alt="recipe image" />
@@ -177,7 +177,12 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
+@import '@/assets/styles/media.scss';
 .recipe {
+    @include media(md) {
+    width: 70%;
+    margin: 0 auto;
+  }
   &__image-wrapper {
     width: 100%;
     height: 250px;

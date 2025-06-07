@@ -67,6 +67,7 @@ import {
   IonInput,
   IonItem,
   IonPage,
+  useIonRouter,
 } from '@ionic/vue'
 import { defineComponent, ref } from 'vue'
 
@@ -89,6 +90,7 @@ export default defineComponent({
     const password = ref('')
     const loading = ref(false)
     const { presentToast } = useToast()
+    const router = useIonRouter()
 
     const register = async () => {
       if (!username.value || !email.value || !password.value) {
@@ -97,11 +99,9 @@ export default defineComponent({
       }
 
       loading.value = true
-      try {
-        await authStore.register(username.value, email.value, password.value)
-      } finally {
-        loading.value = false
-      }
+      await authStore.register(username.value, email.value, password.value)
+      router.push('/home')
+      loading.value = false
     }
 
     return { username, email, password, register, loading }
