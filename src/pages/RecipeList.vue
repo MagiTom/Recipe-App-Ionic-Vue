@@ -1,7 +1,6 @@
 <template>
   <ion-page>
     <ion-content :scroll-events="true" ref="contentRef">
-
       <ion-grid>
         <ion-row>
           <ion-col class="header" size="12">
@@ -11,7 +10,7 @@
             <ion-searchbar
               :debounce="500"
               v-model="searchQuery"
-              @ionInput="handleInput($event)"
+              @ionInput="handleInput"
               placeholder="Szukaj po tytule"
             />
             <ion-loading :is-open="loading" message="Ładowanie przepisów..." spinner="crescent" />
@@ -21,29 +20,22 @@
               shape="round"
               @click="toggleOnlyFavourites"
             >
-              <ion-icon
-                :icon="onlyFavourites ? heart() : heartOutline()"
-                slot="start"
-              />
+              <ion-icon :icon="onlyFavourites ? heart() : heartOutline()" />
               {{ onlyFavourites ? 'Pokaż wszystkie' : 'Pokaż tylko ulubione' }}
             </ion-button>
-
           </ion-col>
           <ion-col size="6" size-md="4" size-lg="3" v-for="recipe in recipes" :key="recipe.id">
             <ion-card @click="goToRecipe(recipe.id)">
               <ion-card-header>
                 <ion-button
+                  @click.stop.prevent="toggleFavourite(recipe.id, recipe.favourite)"
                   class="heartBtn"
                   shape="round"
                   fill="clear"
-                  @click.stop.prevent="toggleFavourite(recipe.id, recipe.favourite)"
                 >
-                  <ion-icon slot="icon-only" :icon="recipe.favourite ? heart() : heartOutline()" />
+                  <ion-icon :icon="recipe.favourite ? heart() : heartOutline()" />
                 </ion-button>
-                <img
-                  alt="recipe image"
-                  :src="getImageToShow(recipe.image, recipe.url)"
-                />
+                <img alt="recipe image" :src="getImageToShow(recipe.image, recipe.url)" />
                 <ion-card-title>{{ recipe.title }}</ion-card-title>
               </ion-card-header>
             </ion-card>
@@ -56,11 +48,7 @@
       </div>
 
       <ion-fab>
-        <ion-fab-button class="add-button"
-                          size="large"
-                          router-link="/add-recipe"
-                          shape="round"
-                          v-if="!loading">
+        <ion-fab-button class="add-button" router-link="/add-recipe" shape="round" v-if="!loading">
           <ion-icon :icon="addIcon"></ion-icon>
         </ion-fab-button>
       </ion-fab>
@@ -73,33 +61,29 @@
 </template>
 
 <script lang="ts">
+import { getImageToShow } from '@/utilis/imageUtils.ts'
 import {
   IonButton,
   IonCard,
   IonCardHeader,
-  IonCardSubtitle,
   IonCardTitle,
   IonCol,
   IonContent,
+  IonFab,
+  IonFabButton,
   IonGrid,
-  IonHeader,
+  IonIcon,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
   IonLoading,
   IonPage,
   IonRow,
-  IonTitle,
-  IonToolbar,
-  useIonRouter,
-  IonCardContent,
-  IonThumbnail,
-  IonInfiniteScroll,
-  IonInfiniteScrollContent,
   IonSearchbar,
-  IonIcon, IonFabButton, IonFab
+  useIonRouter,
 } from '@ionic/vue'
-import { defineComponent, ref, watch, onMounted } from 'vue'
-import { useRecipeStore } from '../stores/recipeStore'
 import { add, arrowBackOutline, arrowForwardOutline, heart, heartOutline } from 'ionicons/icons'
-import { getImageToShow } from '@/utilis/imageUtils.ts'
+import { computed, defineComponent, ref, watch } from 'vue'
+import { useRecipeStore } from '../stores/recipeStore'
 
 export default defineComponent({
   name: 'RecipeList',
@@ -112,15 +96,12 @@ export default defineComponent({
     },
     arrowBackOutline() {
       return arrowBackOutline
-    }, getImageToShow,
-
+    },
+    getImageToShow,
   },
   components: {
     IonLoading,
     IonPage,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
     IonContent,
     IonGrid,
     IonRow,
@@ -128,16 +109,13 @@ export default defineComponent({
     IonCard,
     IonCardHeader,
     IonCardTitle,
-    IonCardContent,
-    IonCardSubtitle,
     IonButton,
-    IonThumbnail,
     IonInfiniteScroll,
     IonInfiniteScrollContent,
     IonSearchbar,
     IonIcon,
     IonFabButton,
-    IonFab
+    IonFab,
   },
   props: {
     id: {
@@ -148,12 +126,11 @@ export default defineComponent({
   setup(props) {
     const recipeStore = useRecipeStore()
     const router = useIonRouter()
-    const loading = ref(false)
-    const nextPage = ref(1)
-    const hasMore = ref(true)
+    const recipes = computed(() => recipeStore.recipes)
+    const loading = computed(() => recipeStore.loading)
+    const hasMore = computed(() => recipeStore.hasMore)
     const searchQuery = ref('')
     const categoryId = ref(Number(props.id))
-    const recipes = ref([])
     const contentRef = ref<HTMLElement | null>(null)
 
     const onlyFavourites = ref(false)
@@ -163,54 +140,25 @@ export default defineComponent({
       await loadRecipes(true)
     }
 
-    const handleInput = async (event: any) => {
-      // const query = event.target.value.toLowerCase();
+    const handleInput = async () => {
       await loadRecipes(true)
     }
 
     const loadRecipes = async (reset = false) => {
-      if (loading.value) return
-      loading.value = true
+      recipeStore.setFilter('title', searchQuery.value)
+      recipeStore.setFilter('category', categoryId.value)
+      recipeStore.setFilter('onlyFavourites', onlyFavourites.value)
 
-      if (reset) {
-        recipes.value = []
-        nextPage.value = 1
-        hasMore.value = true
-      }
-
-      const response = await recipeStore.fetchPaginatedRecipes({
-        page: nextPage.value,
-        title: searchQuery.value,
-        category: categoryId.value,
-        onlyFavourites: onlyFavourites.value,
-      })
-
-      if (response?.results?.length) {
-        recipes.value.push(...response.results)
-        nextPage.value++
-        hasMore.value = !!response.next
-      } else {
-        if (!reset) {
-          hasMore.value = false
-        }
-      }
-
-      loading.value = false
+      await recipeStore.loadPaginatedRecipes(reset)
     }
 
     const handleInfinite = async (event: CustomEvent) => {
-      console.log('adsfdfs')
       await loadRecipes(false)
       ;(event.target as HTMLIonInfiniteScrollElement).complete()
     }
 
     const toggleFavourite = async (recipeId: number, current: boolean) => {
       await recipeStore.toggleFavouriteRecipe(recipeId, !current)
-      // Odśwież lokalny stan (jeśli trzymasz `recipes.value`)
-      const recipe = recipes.value.find((r) => r.id === recipeId)
-      if (recipe) {
-        recipe.favourite = !current
-      }
     }
 
     watch(
@@ -221,7 +169,7 @@ export default defineComponent({
           loadRecipes(true)
         }
       },
-      { immediate: true }
+      { immediate: true },
     )
 
     const goToRecipe = (id: number) => router.push(`/recipe/${id}`)
@@ -240,25 +188,22 @@ export default defineComponent({
       addIcon: add,
       toggleOnlyFavourites,
       onlyFavourites,
-      IonFabButton,
-      IonFab
     }
   },
 })
 </script>
 
 <style scoped lang="scss">
-
-.search{
+.search {
   display: flex;
   flex-direction: column;
-  gap: .5rem;
+  gap: 0.5rem;
   align-items: center;
 }
 
-.header{
+.header {
   margin: 2rem 0 1rem 0;
-  p{
+  p {
     font-weight: bolder;
     font-size: 1.5rem;
     text-align: center;
@@ -266,7 +211,7 @@ export default defineComponent({
   }
 }
 
-ion-searchbar{
+ion-searchbar {
   --box-shadow: 0;
   border: 1px solid var(--ion-color-light);
   border-radius: 16px;
@@ -280,15 +225,24 @@ ion-card {
 
 ion-card-title {
   font-weight: bolder;
-  margin-top: 1rem;
+  font-size: 1.2rem;
 }
 
 ion-card-header .heartBtn {
   position: absolute;
-  right: 15px;
-  top: 15px;
+  right: 5px;
+  top: 5px;
   --background: white;
   --color: var(--ion-color-primary);
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+ion-card-header .heartBtn:hover ion-icon {
+  color: inherit;
+  pointer-events: none;
+  cursor: pointer;
 }
 
 ion-card img {

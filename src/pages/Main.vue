@@ -1,12 +1,8 @@
 <template>
   <ion-page>
     <ion-tabs>
-
-      <!-- Zawartość stron/tabów -->
       <ion-router-outlet></ion-router-outlet>
-
-      <!-- Pasek kart -->
-      <ion-tab-bar slot="bottom">
+      <ion-tab-bar>
         <ion-tab-button tab="back" @click="goBack">
           <ion-icon :icon="chevronBackOutline" />
           <ion-label>wstecz</ion-label>
@@ -26,28 +22,35 @@
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonTabs, IonRouterOutlet, IonTabBar, IonTabButton, IonIcon, IonLabel, IonButton } from '@ionic/vue'
-import { useIonRouter } from '@ionic/vue';
-import { chevronBackOutline, library, logOutOutline } from 'ionicons/icons'
 import { useMainStore } from '@/store'
 import { useAuthStore } from '@/stores/authStore.ts'
+import {
+  IonIcon,
+  IonLabel,
+  IonPage,
+  IonRouterOutlet,
+  IonTabBar,
+  IonTabButton,
+  IonTabs,
+  useIonRouter
+} from '@ionic/vue'
+import { chevronBackOutline, library, logOutOutline } from 'ionicons/icons'
 
 const mainStore = useMainStore()
 const authStore = useAuthStore()
-const router = useIonRouter();
+const router = useIonRouter()
 
 const goBack = () => {
   if (router.canGoBack()) {
-    router.back();
+    router.back()
   } else {
-    alert('Nie ma poprzedniej strony!');
+    alert('Nie ma poprzedniej strony!')
   }
-};
+}
 
 const logout = () => {
   authStore.logout()
   mainStore.clearUser()
   router.push('/login')
 }
-
 </script>

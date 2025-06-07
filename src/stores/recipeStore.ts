@@ -1,104 +1,59 @@
 import { defineStore } from 'pinia'
 import apiClient from '@/interceptors/errorInterceptor'
+import type { Recipe, RecipeDetails, RecipeFilters, PaginatedResponse } from '@/types/recipe'
 
 export const useRecipeStore = defineStore('recipe', {
   state: () => ({
-    recipes: [] as Array<{
-      id: number
-      title: string
-      description: string
-      category: number
-      image: string | null
-      favourite: boolean
-    }>,
-    recipeDetails: null as {
-      id: number
-      title: string
-      description: string
-      ingredients: string
-      instructions: string
-      category: number
-      image: string | null
-      favourite: boolean
-    } | null,
+    recipes: [] as Recipe[],
+    currentPage: 1,
+    hasMore: true,
+    loading: false,
+    filters: {
+      title: '',
+      category: null,
+      onlyFavourites: false,
+    } as RecipeFilters,
+    recipeDetails: null as RecipeDetails | null,
   }),
 
   actions: {
     async fetchAllRecipes() {
-      const response = await apiClient.get('/recipes/') // Zakładam endpoint dla wszystkich przepisów
-      this.recipes = response.data
+      const { data } = await apiClient.get<Recipe[]>('/recipes/')
+      this.recipes = data
     },
+
     async fetchRecipesByCategory(categoryId: number) {
-      const response = await apiClient.get(`/recipes/?category=${categoryId}`)
-      this.recipes = response.data
-    },
-
-    async toggleFavouriteRecipe(recipeId: number, favourite: boolean) {
-      try {
-        const response = await apiClient.patch(`/recipes/${recipeId}/`, { favourite })
-
-        const index = this.recipes.findIndex((r) => r.id === recipeId)
-        if (index !== -1) {
-          this.recipes[index].favourite = response.data.favourite
-        }
-
-        if (this.recipeDetails?.id === recipeId) {
-          this.recipeDetails.favourite = response.data.favourite
-        }
-
-        return response.data
-      } catch (error) {
-        console.error('Błąd podczas zmiany ulubionego przepisu:', error)
-      }
+      const { data } = await apiClient.get<Recipe[]>(`/recipes/?category=${categoryId}`)
+      this.recipes = data
     },
 
     async fetchFavouriteRecipes() {
-      try {
-        const response = await apiClient.get('/recipes/?favourite=true')
-        this.recipes = response.data
-      } catch (error) {
-        console.error('Błąd podczas ładowania ulubionych przepisów:', error)
-      }
+      const { data } = await apiClient.get<Recipe[]>('/recipes/?favourite=true')
+      this.recipes = data
     },
 
-    async fetchPaginatedRecipes({
-                                  page = 1,
-                                  title = '',
-                                  category = null,
-                                  onlyFavourites = false,
-                                }: {
-      page: number
-      title?: string
-      category?: number | null
-      onlyFavourites?: boolean
-    }) {
-      try {
-        const params = new URLSearchParams()
-        params.append('page', page.toString())
-        if (title) params.append('title', title)
-        if (category !== null) params.append('category', category.toString())
-        if (onlyFavourites) params.append('favourite', 'true')
+    async toggleFavouriteRecipe(recipeId: number, favourite: boolean) {
+      const { data } = await apiClient.patch<{ data: Recipe }>(`/recipes/${recipeId}/`, { favourite })
 
-        const response = await apiClient.get(`/recipes/?${params.toString()}`)
-        return response.data
-      } catch (error) {
-        console.error('Błąd podczas ładowania przepisów:', error)
-        return { results: [], next: null }
+      const index = this.recipes.findIndex((recipe) => recipe.id === recipeId)
+      if (index !== -1) {
+        this.recipes[index] = data.data
       }
-    },
 
+      return data
+    },
 
     async fetchRecipeDetails(recipeId: number) {
-      const response = await apiClient.get(`/recipes/${recipeId}/`)
-      this.recipeDetails = response.data
-      return response.data // Dodano zwracanie szczegółów przepisu
+      const { data } = await apiClient.get<RecipeDetails>(`/recipes/${recipeId}/`)
+      this.recipeDetails = data
+      return data
     },
 
     async addRecipe(formData: FormData) {
-      const response = await apiClient.post('/recipes/', formData, {
+      const { data } = await apiClient.post<{ data: Recipe }>('/recipes/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
-      this.recipes.push(response.data)
+      this.recipes.push(data.data)
     },
 
     async deleteRecipe(recipeId: number) {
@@ -107,13 +62,67 @@ export const useRecipeStore = defineStore('recipe', {
     },
 
     async editRecipe(recipeId: number, updatedData: FormData) {
-      const response = await apiClient.put(`/recipes/${recipeId}/`, updatedData, {
+      const { data } = await apiClient.put<{ data: Recipe }>(`/recipes/${recipeId}/`, updatedData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
+
       const index = this.recipes.findIndex((recipe) => recipe.id === recipeId)
       if (index !== -1) {
-        this.recipes[index] = response.data.data
+        this.recipes[index] = data.data
       }
+    },
+
+    async loadPaginatedRecipes(reset = false) {
+      if (this.loading) return
+      this.loading = true
+
+      if (reset) {
+        this.recipes = []
+        this.currentPage = 1
+        this.hasMore = true
+      }
+
+      const params = new URLSearchParams()
+      params.append('page', this.currentPage.toString())
+      if (this.filters.title) params.append('title', this.filters.title)
+      if (this.filters.category !== null) params.append('category', this.filters.category.toString())
+      if (this.filters.onlyFavourites) params.append('favourite', 'true')
+
+      const { data } = await apiClient.get<PaginatedResponse<Recipe>>(`/recipes/?${params.toString()}`)
+      if (data.results.length) {
+        this.recipes.push(...data.results)
+        this.currentPage++
+        this.hasMore = !!data.next
+      } else {
+        this.hasMore = false
+      }
+
+      this.loading = false
+    },
+
+    async fetchPaginatedRecipes({
+      page = 1,
+      title = '',
+      category = null,
+      onlyFavourites = false,
+    }: {
+      page: number
+      title?: string
+      category?: number | null
+      onlyFavourites?: boolean
+    }) {
+      const params = new URLSearchParams()
+      params.append('page', page.toString())
+      if (title) params.append('title', title)
+      if (category !== null) params.append('category', category.toString())
+      if (onlyFavourites) params.append('favourite', 'true')
+
+      const { data } = await apiClient.get<PaginatedResponse<Recipe>>(`/recipes/?${params.toString()}`)
+      return data
+    },
+
+    setFilter(filterName: keyof RecipeFilters, value: any) {
+      this.filters[filterName] = value
     },
   },
 })

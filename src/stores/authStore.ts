@@ -1,87 +1,92 @@
-import { defineStore } from 'pinia';
-import axios from 'axios';
+import { defineStore } from 'pinia'
+import axios from 'axios'
+
+interface User {
+  id: number
+  email: string
+  username: string
+}
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null as { id: number; email: string; username: string } | null,
-    token: localStorage.getItem('token') || '', // access token
-    refreshToken: localStorage.getItem('refreshToken') || '', // refresh token
+    user: null as User | null,
+    token: localStorage.getItem('token') || '',
+    refreshToken: localStorage.getItem('refreshToken') || '',
   }),
 
+  getters: {
+    isAuthenticated(state): boolean {
+      return !!state.token
+    },
+  },
+
   actions: {
-    async fetchUser() {
-      if (!this.token) return;
-
-      try {
-        const response = await axios.get('http://localhost:8000/api/user/', {
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-          },
-        });
-        this.user = response.data;
-      } catch (error) {
-        console.error('Błąd pobierania użytkownika:', error);
-      }
+    setTokens(access: string, refresh: string) {
+      this.token = access
+      this.refreshToken = refresh
+      localStorage.setItem('token', access)
+      localStorage.setItem('refreshToken', refresh)
     },
 
-
-    async login(email: string, password: string) {
-      const response = await axios.post('http://localhost:8000/api/login/', { email, password });
-      this.token = response.data.access;
-      this.refreshToken = response.data.refresh;
-      localStorage.setItem('token', this.token);
-      localStorage.setItem('refreshToken', this.refreshToken);
-      // await this.fetchUser();
-    },
-
-    async register(username: string, email: string, password: string) {
-      const response = await axios.post('http://localhost:8000/api/register/', { username, email, password });
-      this.token = response.data.access;
-      this.refreshToken = response.data.refresh;
-      localStorage.setItem('token', this.token);
-      localStorage.setItem('refreshToken', this.refreshToken);
-      // await this.fetchUser();
+    clearAuth() {
+      this.user = null
+      this.token = ''
+      this.refreshToken = ''
+      localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
     },
 
     logout() {
-      this.user = null;
-      this.token = '';
-      this.refreshToken = '';
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
+      this.clearAuth()
     },
 
     initializeAuth() {
-      const token = localStorage.getItem('token');
-      const refreshToken = localStorage.getItem('refreshToken');
+      const token = localStorage.getItem('token')
+      const refreshToken = localStorage.getItem('refreshToken')
       if (token && refreshToken) {
-        this.token = token;
-        this.refreshToken = refreshToken;
+        this.token = token
+        this.refreshToken = refreshToken
       }
+    },
+
+    async fetchUser() {
+      if (!this.token) return
+
+      const { data } = await axios.get('http://localhost:8000/api/user/', {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
+      })
+
+      this.user = data
+    },
+
+    async login(email: string, password: string) {
+      const { data } = await axios.post('http://localhost:8000/api/login/', { email, password })
+      this.setTokens(data.access, data.refresh)
+    },
+
+    async register(username: string, email: string, password: string) {
+      const { data } = await axios.post('http://localhost:8000/api/register/', {
+        username,
+        email,
+        password,
+      })
+      this.setTokens(data.access, data.refresh)
     },
 
     async refreshAccessToken() {
       if (!this.refreshToken) {
-        this.logout();
-        // throw new Error('Brak odświeżającego tokena.');
+        this.logout()
+        return
       }
 
-      try {
-        const response = await axios.post('http://localhost:8000/api/refresh/', {
-          refresh: this.refreshToken,
-        });
-        this.token = response.data.access;
-        localStorage.setItem('token', this.token);
-      } catch (error) {
-        this.logout();
-        // throw new Error('Nie udało się odświeżyć tokena.');
-      }
-    },
-  },
+      const { data } = await axios.post('http://localhost:8000/api/refresh/', {
+        refresh: this.refreshToken,
+      })
 
-  getters: {
-    isAuthenticated(): boolean {
-      return !!this.token;
+      this.token = data.access
+      localStorage.setItem('token', data.access)
     },
   },
-});
+})

@@ -11,12 +11,24 @@
           </ion-card-header>
           <ion-card-content class="login-content">
             <ion-item>
-              <ion-input label-placement="floating" label="E-mail" v-model="email" type="email" :clear-input="true"></ion-input>
+              <ion-input
+                label-placement="floating"
+                label="E-mail"
+                v-model="email"
+                type="email"
+                :clear-input="true"
+              ></ion-input>
             </ion-item>
 
             <ion-item>
-              <ion-input label-placement="floating" label="Hasło" v-model="password" type="password" :clear-input="true">
-                <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+              <ion-input
+                label-placement="floating"
+                label="Hasło"
+                v-model="password"
+                type="password"
+                :clear-input="true"
+              >
+                <ion-input-password-toggle></ion-input-password-toggle>
               </ion-input>
             </ion-item>
 
@@ -40,36 +52,28 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
-import { useAuthStore } from '@/stores/authStore' // zmień ścieżkę, jeśli masz inaczej
+import { useToast } from '@/composables/useToast.ts'
+import { useAuthStore } from '@/stores/authStore'
 import {
   IonButton,
   IonCard,
   IonCardContent,
   IonCardHeader,
-  IonCardTitle,
   IonContent,
-  IonHeader,
   IonInput,
   IonItem,
   IonPage,
-  IonTitle,
-  IonToolbar,
   useIonRouter,
 } from '@ionic/vue'
-import { useToast } from '@/composables/useToast.ts'
+import { defineComponent, ref } from 'vue'
 
 export default defineComponent({
   name: 'Login',
   components: {
     IonPage,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
     IonContent,
     IonCard,
     IonCardHeader,
-    IonCardTitle,
     IonCardContent,
     IonItem,
     IonInput,
@@ -81,11 +85,11 @@ export default defineComponent({
     const email = ref('')
     const password = ref('')
     const loading = ref(false)
-    const { presentToast } = useToast();
+    const { presentToast } = useToast()
 
     const login = async () => {
       if (!email.value || !password.value) {
-        await presentToast('Podaj email i hasło!', 'warning');
+        await presentToast('Podaj email i hasło!', 'warning')
         return
       }
 
@@ -93,9 +97,6 @@ export default defineComponent({
       try {
         await authStore.login(email.value, password.value)
         router.push('/home')
-        await presentToast(`Zalogowano jako ${email.value}!`, 'success');
-      } catch (err: any) {
-        await presentToast('Błąd logowania: ' + (err.response?.data?.details?.detail), 'danger');
       } finally {
         loading.value = false
       }
@@ -107,9 +108,9 @@ export default defineComponent({
 </script>
 
 <style scoped>
-
 ion-content.login {
-  --background: var(--ion-color-primary) url('@/assets/background.png') no-repeat center center / cover;
+  --background: var(--ion-color-primary) url('@/assets/background.png') no-repeat center center /
+    cover;
 }
 .login-container {
   display: flex;

@@ -1,59 +1,55 @@
-import axios from 'axios';
-import { toastController } from '@ionic/vue';
-import { useAuthStore } from '@/stores/authStore';
+import { useToast } from '@/composables/useToast'
+import { useAuthStore } from '@/stores/authStore'
+import axios from 'axios'
 
+const { presentToast } = useToast()
 const apiClient = axios.create({
   baseURL: 'http://localhost:8000/api',
-});
+})
 
-// Request Interceptor - Dodawanie nagłówka Authorization
 apiClient.interceptors.request.use(
   (config) => {
-    const authStore = useAuthStore();
+    const authStore = useAuthStore()
     if (authStore.token) {
-      config.headers['Authorization'] = `Bearer ${authStore.token}`;
+      config.headers['Authorization'] = `Bearer ${authStore.token}`
     }
-    return config;
+    return config
   },
   (error) => {
-    return Promise.reject(error);
-  }
-);
+    return Promise.reject(error)
+  },
+)
 
-// Response Interceptor - Obsługa błędów
 apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const authStore = useAuthStore();
+  async (response) => {
+    const method = response.config.method?.toUpperCase() || ''
 
-    if (error.response?.status === 401 && error.config && !error.config._retry) {
-      error.config._retry = true;
-
-      try {
-        await authStore.refreshAccessToken(); // Próba odświeżenia tokena
-        error.config.headers['Authorization'] = `Bearer ${authStore.token}`;
-        return apiClient(error.config); // Ponowne wykonanie żądania
-      } catch (refreshError) {
-        authStore.logout(); // Wylogowanie po nieudanym odświeżeniu
-        const toast = await toastController.create({
-          message: 'Sesja wygasła. Zaloguj się ponownie.',
-          duration: 3000,
-          color: 'danger',
-        });
-        await toast.present();
-        return Promise.reject(refreshError);
-      }
+    if (['POST', 'PUT', 'DELETE'].includes(method)) {
+      await presentToast(response.data.message, 'success')
     }
 
-    const toast = await toastController.create({
-      message: error.response?.data?.detail || 'Coś poszło nie tak!',
-      duration: 3000,
-      color: 'danger',
-    });
-    await toast.present();
+    return response
+  },
+  async (error) => {
+    const authStore = useAuthStore()
 
-    return Promise.reject(error);
-  }
-);
+    if (error.response?.status === 401 && error.config && !error.config._retry) {
+      error.config._retry = true
 
-export default apiClient;
+      try {
+        await authStore.refreshAccessToken()
+        error.config.headers['Authorization'] = `Bearer ${authStore.token}`
+        return apiClient(error.config)
+      } catch (refreshError) {
+        authStore.logout()
+        await presentToast('Sesja wygasła. Zaloguj się ponownie.', 'danger')
+        return Promise.reject(refreshError)
+      }
+    }
+    await presentToast(error.response?.data?.detail || 'Coś poszło nie tak!', 'danger')
+
+    return Promise.reject(error)
+  },
+)
+
+export default apiClient

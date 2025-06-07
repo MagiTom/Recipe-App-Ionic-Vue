@@ -4,18 +4,24 @@
       <div v-if="recipe" class="recipe">
         <div class="recipe__image-wrapper">
           <div class="recipe__actions">
-            <ion-button @click="editRecipe(recipe.id)" color="secondary" class="recipe__action" shape="round">
-              <ion-icon slot="icon-only" :icon="createOutline()"></ion-icon>
+            <ion-button
+              @click="editRecipe(recipe.id)"
+              color="secondary"
+              class="recipe__action"
+              shape="round"
+            >
+              <ion-icon :icon="createOutline()"></ion-icon>
             </ion-button>
-            <ion-button @click="deleteRecipe(recipe.id)" color="secondary" class="recipe__action" shape="round">
-              <ion-icon slot="icon-only" :icon="trashOutline()"></ion-icon>
+            <ion-button
+              @click="deleteRecipe(recipe.id)"
+              color="secondary"
+              class="recipe__action"
+              shape="round"
+            >
+              <ion-icon :icon="trashOutline()"></ion-icon>
             </ion-button>
           </div>
-          <img
-            class="recipe__image"
-            :src="imageToShow"
-            alt="recipe image"
-          />
+          <img class="recipe__image" :src="imageToShow" alt="recipe image" />
         </div>
 
         <div class="recipe__content">
@@ -26,19 +32,25 @@
               </ion-col>
               <ion-col size="12">
                 <div class="recipe__web">
-                <ion-badge color="secondary">
-                  <ion-icon size="large" :icon="globeOutline()" />
-                </ion-badge>
-                <h4 class="recipe__subtitle">Strona</h4>
+                  <ion-badge color="secondary">
+                    <ion-icon size="large" :icon="globeOutline()" />
+                  </ion-badge>
+                  <h4 class="recipe__subtitle">Strona</h4>
                 </div>
-                  <a :href="recipe.url" class="recipe__description">{{ recipe.url }}</a>
+                <a :href="recipe.url" class="recipe__description">{{ recipe.url }}</a>
               </ion-col>
               <ion-col size="12">
                 <div v-if="ingredientsList.length">
                   <h4 class="recipe__subtitle">Składniki</h4>
-                  <p class="recipe__description">{{ingredientsList.length}} elementów</p>
+                  <p class="recipe__description">{{ ingredientsList.length }} elementów</p>
                   <div class="recipe__ingredients">
-                    <ion-badge color="secondary" v-for="(ingredient, index) in ingredientsList" :key="index">  {{ ingredient }}</ion-badge>
+                    <ion-badge
+                      color="secondary"
+                      v-for="(ingredient, index) in ingredientsList"
+                      :key="index"
+                    >
+                      {{ ingredient }}</ion-badge
+                    >
                   </div>
                 </div>
               </ion-col>
@@ -64,6 +76,7 @@
 
 <script lang="ts">
 import { useRecipeStore } from '@/stores/recipeStore'
+import { getImageToShow } from '@/utilis/imageUtils.ts'
 import {
   alertController,
   IonButton,
@@ -73,11 +86,11 @@ import {
   IonPage,
   IonRow,
   IonSpinner,
+  onIonViewWillEnter,
   useIonRouter,
 } from '@ionic/vue'
-import { computed, defineComponent, watch } from 'vue'
 import { createOutline, globeOutline, trashOutline } from 'ionicons/icons'
-import { getImageToShow } from '@/utilis/imageUtils.ts'
+import { computed, defineComponent } from 'vue'
 
 export default defineComponent({
   name: 'RecipeDetails',
@@ -90,7 +103,7 @@ export default defineComponent({
     },
     createOutline() {
       return createOutline
-    }
+    },
   },
   components: {
     IonButton,
@@ -111,15 +124,9 @@ export default defineComponent({
     const recipeStore = useRecipeStore()
     const router = useIonRouter()
 
-    watch(
-      () => props.id,
-      (newId) => {
-        if (newId) {
-          recipeStore.fetchRecipeDetails(Number(newId))
-        }
-      },
-      { immediate: true }
-    )
+    onIonViewWillEnter(() => {
+      recipeStore.fetchRecipeDetails(Number(props.id))
+    })
 
     const recipe = computed(() => recipeStore.recipeDetails)
 
@@ -155,7 +162,7 @@ export default defineComponent({
     }
 
     const imageToShow = computed(() =>
-      getImageToShow(recipe.value?.image ?? null, recipe.value?.url ?? null)
+      getImageToShow(recipe.value?.image ?? null, recipe.value?.url ?? null),
     )
 
     return {
@@ -163,14 +170,14 @@ export default defineComponent({
       ingredientsList,
       deleteRecipe,
       editRecipe,
-      imageToShow
+      imageToShow,
     }
   },
 })
 </script>
 
 <style scoped lang="scss">
-.recipe{
+.recipe {
   &__image-wrapper {
     width: 100%;
     height: 250px;
@@ -185,7 +192,7 @@ export default defineComponent({
     display: block;
   }
 
-  &__actions{
+  &__actions {
     position: absolute;
     right: 1rem;
     top: 1rem;
@@ -194,7 +201,7 @@ export default defineComponent({
     gap: 2rem;
   }
 
-  &__web{
+  &__web {
     display: flex;
     gap: 1rem;
     align-items: center;
@@ -214,19 +221,18 @@ export default defineComponent({
     font-weight: bold;
     margin-top: 0;
   }
-  &__subtitle{
+  &__subtitle {
     font-weight: bold;
   }
-  &__description{
-    margin-block: .5rem;
+  &__description {
+    margin-block: 0.5rem;
     color: var(--ion-color-medium);
   }
 
-  &__ingredients{
+  &__ingredients {
     display: flex;
     flex-wrap: wrap;
-    gap: .5rem;
+    gap: 0.5rem;
   }
 }
-
 </style>
