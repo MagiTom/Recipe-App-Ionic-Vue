@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import apiClient from '@/interceptors/errorInterceptor'
+import { API_BASE } from '@/enviroments'
 
 interface User {
   id: number
@@ -52,7 +53,7 @@ export const useAuthStore = defineStore('auth', {
     async fetchUser() {
       if (!this.token) return
 
-      const { data } = await apiClient.get('http://localhost:8000/api/user/', {
+      const { data } = await apiClient.get(`${API_BASE}/user/`, {
         headers: {
           Authorization: `Bearer ${this.token}`,
         },
@@ -63,7 +64,7 @@ export const useAuthStore = defineStore('auth', {
 
     async login(email: string, password: string) {
       try {
-        const { data } = await apiClient.post('http://localhost:8000/api/login/', {
+        const { data } = await apiClient.post(`${API_BASE}/login/`, {
           email,
           password,
         })
@@ -75,7 +76,7 @@ export const useAuthStore = defineStore('auth', {
 
     async register(username: string, email: string, password: string) {
       try {
-        const { data } = await apiClient.post('http://localhost:8000/api/register/', {
+        const { data } = await apiClient.post(`${API_BASE}/register/`, {
           username,
           email,
           password,
@@ -92,7 +93,7 @@ export const useAuthStore = defineStore('auth', {
         return
       }
 
-      const { data } = await apiClient.post('http://localhost:8000/api/refresh/', {
+      const { data } = await apiClient.post(`${API_BASE}/refresh/`, {
         refresh: this.refreshToken,
       })
 

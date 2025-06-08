@@ -1,10 +1,11 @@
 import { useToast } from '@/composables/useToast'
+import { API_BASE } from '@/enviroments'
 import { useAuthStore } from '@/stores/authStore'
 import axios from 'axios'
 
 const { presentToast } = useToast()
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: API_BASE,
 })
 
 apiClient.interceptors.response.use(
