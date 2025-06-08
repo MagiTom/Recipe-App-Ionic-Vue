@@ -53,12 +53,7 @@ export const useAuthStore = defineStore('auth', {
     async fetchUser() {
       if (!this.token) return
 
-      const { data } = await apiClient.get(`${API_BASE}/user/`, {
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-        },
-      })
-
+      const { data } = await apiClient.get(`${API_BASE}/user/`)
       this.user = data
     },
 
@@ -87,18 +82,23 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async refreshAccessToken() {
-      if (!this.refreshToken) {
-        this.logout()
-        return
-      }
+async refreshAccessToken() {
+  if (!this.refreshToken) {
+    this.logout()
+    throw new Error('Brak refresh tokena')
+  }
 
-      const { data } = await apiClient.post(`${API_BASE}/refresh/`, {
-        refresh: this.refreshToken,
-      })
+  try {
+    const { data } = await apiClient.post(`${API_BASE}/refresh/`, {
+      refresh: this.refreshToken,
+    })
 
-      this.token = data.access
-      localStorage.setItem('token', data.access)
-    },
+    this.token = data.access
+    localStorage.setItem('token', data.access)
+  } catch (error) {
+    this.logout()
+    throw error
+  }
+}
   },
 })
