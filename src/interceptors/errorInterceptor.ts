@@ -1,6 +1,7 @@
 import { useToast } from '@/composables/useToast'
 import { API_BASE } from '@/enviroments'
 import { useAuthStore } from '@/stores/authStore'
+import { useLoaderStore } from '@/stores/useLoaderStore'
 import axios from 'axios'
 
 const { presentToast } = useToast()
@@ -12,7 +13,7 @@ let isRefreshing = false
 let failedQueue: any[] = []
 
 function processQueue(error: any, token: string | null = null) {
-  failedQueue.forEach(prom => {
+  failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error)
     } else {
@@ -25,18 +26,25 @@ function processQueue(error: any, token: string | null = null) {
 apiClient.interceptors.request.use(
   (config) => {
     const authStore = useAuthStore()
+    const loaderStore = useLoaderStore()
+    loaderStore.startLoading()
     if (authStore.token) {
       config.headers['Authorization'] = `Bearer ${authStore.token}`
     }
     return config
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    const loaderStore = useLoaderStore()
+    loaderStore.stopLoading()
+    return Promise.reject(error)
+  },
 )
-
 
 apiClient.interceptors.response.use(
   async (response) => {
     const method = response.config.method?.toUpperCase() || ''
+    const loaderStore = useLoaderStore()
+    loaderStore.stopLoading()
 
     if (['POST', 'PUT', 'DELETE'].includes(method)) {
       if (response.data.message) {
@@ -47,6 +55,8 @@ apiClient.interceptors.response.use(
     return response
   },
   async (error) => {
+    const loaderStore = useLoaderStore()
+    loaderStore.stopLoading()
     const authStore = useAuthStore()
     const originalRequest = error.config
 
@@ -113,7 +123,7 @@ apiClient.interceptors.response.use(
 
     await presentToast(message, 'danger')
     return Promise.reject(error)
-  }
+  },
 )
 
 export default apiClient

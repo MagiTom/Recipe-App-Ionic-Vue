@@ -13,7 +13,7 @@
               @ionInput="handleInput"
               placeholder="Szukaj po tytule"
             />
-            <ion-loading :is-open="loading" message="Ładowanie przepisów..." spinner="crescent" />
+
           </ion-col>
           <ion-col size="12" size-md="6">
             <ion-button

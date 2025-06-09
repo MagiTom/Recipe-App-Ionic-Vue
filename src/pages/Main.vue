@@ -1,5 +1,6 @@
 <template>
   <ion-page>
+    <ion-loading :is-open="isLoading" message="Ładowanie..." />
     <ion-tabs>
       <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom">
@@ -24,6 +25,7 @@
 <script setup lang="ts">
 import { useMainStore } from '@/store'
 import { useAuthStore } from '@/stores/authStore.ts'
+import { useLoaderStore } from '@/stores/useLoaderStore'
 import {
   IonIcon,
   IonLabel,
@@ -32,13 +34,17 @@ import {
   IonTabBar,
   IonTabButton,
   IonTabs,
-  useIonRouter
+  useIonRouter,
+  IonLoading
 } from '@ionic/vue'
 import { chevronBackOutline, library, logOutOutline } from 'ionicons/icons'
+import { computed } from 'vue'
 
 const mainStore = useMainStore()
 const authStore = useAuthStore()
 const router = useIonRouter()
+const loaderStore = useLoaderStore()
+const isLoading = computed(() => loaderStore.isLoading)
 
 const goBack = () => {
   if (router.canGoBack()) {
